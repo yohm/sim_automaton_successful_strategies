@@ -1,5 +1,6 @@
 require_relative 'n2m2_strategy'
 require_relative 'n3m2_strategy'
+require_relative 'n3m3_strategy'
 require_relative 'graph'
 
 if ARGV.size == 0
@@ -51,6 +52,11 @@ ARGV.each do |s|
     str = N3M2::Strategy.make_from_bits(s)
     actions = str.to_64a
     str.show_actions_using_full_state($stderr)
+  elsif s.length == 512
+    $stderr.puts "loading n=3,m=3 strategy: #{s}"
+    str = N3M3::Strategy.make_from_bits(s)
+    actions = str.to_a
+    str.show_actions($stderr)
   else
     $stderr.puts "unsupported input format"
     raise "invalid argument"

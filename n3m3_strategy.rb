@@ -118,6 +118,10 @@ class Strategy
     @actions.join('')
   end
 
+  def to_a
+    @actions.dup
+  end
+
   def show_actions(io)
     FullState::NUM_STATES.times do |i|
       act = @actions[i]
@@ -218,6 +222,18 @@ EOS
     state_c = FullState.new( s.c_3, s.c_2, s.c_1, s.b_3, s.b_2, s.b_1, s.a_3, s.a_2, s.a_1 )
     act_c = action(state_c.to_id)
     s.next_state(act_a, act_b, act_c )
+  end
+
+  def transition_graph
+    g = DirectedGraph.new(512)
+    512.times do |i|
+      s = FullState.make_from_id(i)
+      next_ss = possible_next_full_states(s)
+      next_ss.each do |ns|
+        g.add_link(i, ns.to_id)
+      end
+    end
+    g
   end
 
   def transition_graph_with_self
