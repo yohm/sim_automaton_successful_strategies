@@ -47,16 +47,19 @@ ARGV.each do |s|
     $stderr.puts "loading n=2,m=2 strategy: #{s}"
     str = N2M2::Strategy.make_from_str(s)
     actions = str.to_a
+    mask = 5
   elsif s.length == 40
     $stderr.puts "loading n=3,m=2 strategy: #{s}"
     str = N3M2::Strategy.make_from_bits(s)
     actions = str.to_64a
     str.show_actions_using_full_state($stderr)
+    mask = 21
   elsif s.length == 512
     $stderr.puts "loading n=3,m=3 strategy: #{s}"
     str = N3M3::Strategy.make_from_bits(s)
     actions = str.to_a
     str.show_actions($stderr)
+    mask = 73
   else
     $stderr.puts "unsupported input format"
     raise "invalid argument"
@@ -72,6 +75,13 @@ ARGV.each do |s|
     [ n, {label: "#{actions[n]}@#{([n]+sub).sort.join(',')}"} ]
   end
   attr = Hash[mapped]
-  $stdout.puts g.to_dot(remove_isolated: true, node_attributes: attr)
+  link_label = {}
+  g.for_each_link do |ni,nj|
+    k = [ni,nj]
+    link_label[k] = merge_idx[nj].map {|nk| (nk&mask).to_s(2)}.uniq.join(',')
+  end
+  $stderr.puts link_label.inspect
+
+  $stdout.puts g.to_dot(remove_isolated: true, node_attributes: attr, edge_labels: link_label)
 end
 
