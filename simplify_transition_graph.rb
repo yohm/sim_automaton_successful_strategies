@@ -76,11 +76,11 @@ ARGV.each do |s|
   end
   attr = Hash[mapped]
   link_label = {}
-  g.for_each_link do |ni,nj|
-    k = [ni,nj]
-    link_label[k] = merge_idx[nj].map {|nk| (nk&mask).to_s(2)}.uniq.join(',')
-  end
-  $stderr.puts link_label.inspect
+  # g.for_each_link do |ni,nj|
+  #   k = [ni,nj]
+  #   link_label[k] = merge_idx[nj].map {|nk| (nk&mask).to_s(2)}.uniq.join(',')
+  # end
+  # $stderr.puts link_label.inspect
 
   $stdout.puts g.to_dot(remove_isolated: true, node_attributes: attr, edge_labels: link_label)
 end
