@@ -31,21 +31,25 @@ def merge(g, actions)
         end
         g.links[j] = []  # links from j are removed
         g.remove_duplicated_links!
-        pp g
+        # pp g
         updated = true
         break
       end
     end
   end
-
-  pp merged, g
-  puts g.to_dot(remove_isolated: true)
+  return merged, g
 end
 
 ARGV.each do |s|
   str = Strategy.make_from_str(s)
   $stderr.puts str.inspect
-  merge( str.transition_graph, str.to_a )
-  #puts str.transition_graph.to_dot
+  File.open('before.dot', 'w') do |io|
+    io.puts str.transition_graph.to_dot(remove_isolated: true)
+  end
+  merge_idx, g = merge( str.transition_graph, str.to_a )
+  $stderr.puts merge_idx.inspect
+  File.open('after.dot', 'w') do |io|
+    io.puts g.to_dot(remove_isolated: true)
+  end
 end
 
