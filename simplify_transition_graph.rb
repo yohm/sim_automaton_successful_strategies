@@ -63,13 +63,15 @@ ARGV.each do |s|
   end
 
   $stderr.puts str.inspect
-  File.open('before.dot', 'w') do |io|
-    io.puts str.transition_graph.to_dot(remove_isolated: true)
-  end
+  # File.open('before.dot', 'w') do |io|
+  #   io.puts str.transition_graph.to_dot(remove_isolated: true)
+  # end
   merge_idx, g = merge( str.transition_graph, actions )
   $stderr.puts merge_idx.inspect
-  File.open('after.dot', 'w') do |io|
-    io.puts g.to_dot(remove_isolated: true)
+  mapped = merge_idx.map do |n,sub|
+    [ n, {label: "#{actions[n]}@#{([n]+sub).sort.join(',')}"} ]
   end
+  attr = Hash[mapped]
+  $stdout.puts g.to_dot(remove_isolated: true, node_attributes: attr)
 end
 
