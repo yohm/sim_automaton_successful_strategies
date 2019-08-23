@@ -1,4 +1,4 @@
-require_relative 'strategy'
+require_relative 'n2m2_strategy'
 require_relative 'graph'
 
 if ARGV.size == 0
@@ -41,7 +41,7 @@ def merge(g, actions)
 end
 
 ARGV.each do |s|
-  str = Strategy.make_from_str(s)
+  str = N2M2::Strategy.make_from_str(s)
   $stderr.puts str.inspect
   File.open('before.dot', 'w') do |io|
     io.puts str.transition_graph.to_dot(remove_isolated: true)

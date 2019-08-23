@@ -2,6 +2,8 @@ require 'pp'
 require_relative 'graph'
 require 'stringio'
 
+module N2M2
+
 class State
 
   A_STATES = [
@@ -263,9 +265,12 @@ class Strategy
   end
 end
 
+end
+
 if __FILE__ == $0 and ARGV.size > 0
   ARGV.each do |s|
-    pp Strategy.make_from_str(s)
+    pp N2M2::Strategy.make_from_str(s)
   end
 end
+
 
