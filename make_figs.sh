@@ -11,7 +11,7 @@ make_figs() {
   done
 }
 
-make_figs results/n3m2_PS2_distinguishable fig_PS2_dis
+make_figs results/n3m2_PS2_indistinguishable fig_PS2_indis
 make_figs results/n3m2_PS2 fig_PS2
 make_figs results/n3m3_FSS fig_FS2
 
