@@ -208,7 +208,16 @@ class Strategy
   end
 
   def action( state )
-    @strategy[state]
+    s = case state
+    when Integer
+      fs = FullState.make_from_id(state)
+      fs.to_ss
+    when FullState
+      fs.to_ss
+    else
+      state
+    end
+    @strategy[s]
   end
 
   def valid?

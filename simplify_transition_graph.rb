@@ -82,20 +82,17 @@ s = ARGV[0]
 if s.length == 16
   $stderr.puts "loading n=2,m=2 strategy: #{s}"
   str = N2M2::Strategy.make_from_str(s)
-  actions = str.to_a
   histo_to_action = lambda {|x| [4,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 elsif s.length == 40
   $stderr.puts "loading n=3,m=2 strategy: #{s}"
   str = N3M2::Strategy.make_from_bits(s)
-  actions = str.to_64a
   str.show_actions_using_full_state($stderr)
-  mask = 21
+  histo_to_action = lambda {|x| [16,4,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 elsif s.length == 512
   $stderr.puts "loading n=3,m=3 strategy: #{s}"
   str = N3M3::Strategy.make_from_bits(s)
-  actions = str.to_a
   str.show_actions($stderr)
-  mask = 73
+  histo_to_action = lambda {|x| [64,8,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 else
   $stderr.puts "unsupported input format"
   raise "invalid argument"
@@ -109,7 +106,7 @@ ata_g = str.transition_graph
 uf, as_g = construct_AS_graph( ata_g, histo_to_action )
 $stderr.puts uf.tree.inspect
 mapped = uf.roots.map do |n|
-  [ n, {label: "#{actions[n]}@#{n}"} ]
+  [ n, {label: "#{str.action(n)}@#{n}"} ]
 end
 attr = Hash[mapped]
 link_label = Hash.new {|h,k| h[k] = [] }
