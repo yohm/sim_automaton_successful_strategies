@@ -8,38 +8,74 @@ if ARGV.size == 0
   raise "invalid number of arguments"
 end
 
-def mergeable(g, i, j)
-  di = g.links[i].map {|x| x == j ? i : x }.sort
-  dj = g.links[j].map {|x| x == j ? i : x }.sort
+class UnionFind
+  def initialize(n)
+    @par  = Array.new(n) {|i| i}
+  end
+
+  def root(i)
+    if @par[i] != i
+      r = root(@par[i])
+      @par[i] = r
+    end
+    @par[i]
+  end
+
+  def tree
+    h = {}
+    @par.size.times.each do |i|
+      k = root(i)
+      h[k] ||= []
+      h[k].push(i)
+    end
+    h
+  end
+
+  def roots
+    tree.keys.sort
+  end
+
+  def merge(i, j)
+    ri = root(i)
+    rj = root(j)
+    return false if ri == rj  # already merged
+    ri,rj = rj,ri if ri > rj
+    @par[rj] = ri
+  end
+end
+
+def mergeable(dest_i, dest_j, h2a, uf)
+  # both action & next state must be identical
+  di = dest_i.map {|x| [h2a.call(x), uf.root(x)] }.sort
+  dj = dest_j.map {|x| [h2a.call(x), uf.root(x)] }.sort
   di == dj
 end
 
-def merge(g, actions)
-  merged = {}  # merged nodes  {0=>[], 1=>[2,3,4], 5=>[7], 6=>[]}
-  g.n.times {|i| merged[i] = [] }
+def construct_AS_graph(g, h2a)
+  uf = UnionFind.new(g.n)  # grouping
 
   updated = true
   while(updated)
     updated = false
-    merged.keys.sort.combination(2).each do |i,j|
-      if actions[i] == actions[j] and mergeable(g,i,j)
-        # $stderr.puts "merging #{i} #{j}"
-        # j is merged into i
-        merged[i] += merged[j] + [j]
-        merged.delete(j)
-        # links going to j are rewired to i
-        g.parent_nodes(j).each do |k|
-          g.links[k].map! {|x| x == j ? i : x }
-        end
-        g.links[j] = []  # links from j are removed
-        g.remove_duplicated_links!
-        # pp g
+    uf.roots.combination(2).each do |i,j|
+      if mergeable(g.links[i], g.links[j], h2a, uf)
+        $stderr.puts "merging #{i} #{j}"
+        uf.merge(i, j)
         updated = true
         break
       end
     end
   end
-  return merged, g
+
+  g2 = DirectedGraph.new(g.n)
+  g.for_each_link do |i,j|
+    ri = uf.root(i)
+    rj = uf.root(j)
+    g2.add_link(ri,rj)
+  end
+  g2.remove_duplicated_links!
+
+  return uf, g2
 end
 
 s = ARGV[0]
@@ -47,7 +83,7 @@ if s.length == 16
   $stderr.puts "loading n=2,m=2 strategy: #{s}"
   str = N2M2::Strategy.make_from_str(s)
   actions = str.to_a
-  mask = 5
+  histo_to_action = lambda {|x| [4,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 elsif s.length == 40
   $stderr.puts "loading n=3,m=2 strategy: #{s}"
   str = N3M2::Strategy.make_from_bits(s)
@@ -66,22 +102,24 @@ else
 end
 
 $stderr.puts str.inspect
+ata_g = str.transition_graph
 # File.open('before.dot', 'w') do |io|
 #   io.puts str.transition_graph.to_dot(remove_isolated: true)
 # end
-merge_idx, g = merge( str.transition_graph, actions )
-$stderr.puts merge_idx.inspect
-mapped = merge_idx.map do |n,sub|
+uf, as_g = construct_AS_graph( ata_g, histo_to_action )
+$stderr.puts uf.tree.inspect
+mapped = uf.roots.map do |n|
   [ n, {label: "#{actions[n]}@#{n}"} ]
-  # [ n, {label: "#{actions[n]}@#{([n]+sub).sort.join(',')}"} ]
 end
 attr = Hash[mapped]
-link_label = {}
-# g.for_each_link do |ni,nj|
-#   k = [ni,nj]
-#   link_label[k] = merge_idx[nj].map {|nk| (nk&mask).to_s(2)}.uniq.join(',')
-# end
-# $stderr.puts link_label.inspect
+link_label = Hash.new {|h,k| h[k] = [] }
+t = uf.tree
+ata_g.for_each_link do |i,j|
+  e = [uf.root(i), uf.root(j)]
+  link_label[e].push( histo_to_action.call(j) )
+end
+link_label = link_label.map {|k,v| [k, v.sort.uniq.join(',')] }.to_h
+$stderr.puts link_label.inspect
 
-$stdout.puts g.to_dot(remove_isolated: true, node_attributes: attr, edge_labels: link_label)
+$stdout.puts as_g.to_dot(remove_isolated: true, node_attributes: attr, edge_labels: link_label)
 
