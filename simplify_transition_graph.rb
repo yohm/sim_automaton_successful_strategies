@@ -59,7 +59,7 @@ def construct_AS_graph(g, h2a)
     updated = false
     uf.roots.combination(2).each do |i,j|
       if mergeable(g.links[i], g.links[j], h2a, uf)
-        $stderr.puts "merging #{i} #{j}"
+        # $stderr.puts "merging #{i} #{j}"
         uf.merge(i, j)
         updated = true
         break
