@@ -78,33 +78,35 @@ def construct_AS_graph(g, h2a)
   return uf, g2
 end
 
+DEBUG = true
+
 s = ARGV[0]
 if s.length == 16
-  $stderr.puts "loading n=2,m=2 strategy: #{s}"
+  $stderr.puts "loading n=2,m=2 strategy: #{s}" if DEBUG
   str = N2M2::Strategy.make_from_str(s)
   histo_to_action = lambda {|x| [4,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 elsif s.length == 40
-  $stderr.puts "loading n=3,m=2 strategy: #{s}"
+  $stderr.puts "loading n=3,m=2 strategy: #{s}" if DEBUG
   str = N3M2::Strategy.make_from_bits(s)
-  str.show_actions_using_full_state($stderr)
+  str.show_actions_using_full_state($stderr) if DEBUG
   histo_to_action = lambda {|x| [16,4,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 elsif s.length == 512
-  $stderr.puts "loading n=3,m=3 strategy: #{s}"
+  $stderr.puts "loading n=3,m=3 strategy: #{s}" if DEBUG
   str = N3M3::Strategy.make_from_bits(s)
-  str.show_actions($stderr)
+  str.show_actions($stderr) if DEBUG
   histo_to_action = lambda {|x| [64,8,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 else
   $stderr.puts "unsupported input format"
   raise "invalid argument"
 end
 
-$stderr.puts str.inspect
+$stderr.puts str.inspect if DEBUG
 ata_g = str.transition_graph
 # File.open('before.dot', 'w') do |io|
 #   io.puts str.transition_graph.to_dot(remove_isolated: true)
 # end
 uf, as_g = construct_AS_graph( ata_g, histo_to_action )
-$stderr.puts uf.tree.inspect
+$stderr.puts uf.tree.inspect if DEBUG
 mapped = uf.roots.map do |n|
   [ n, {label: "#{str.action(n)}@#{n}"} ]
 end
@@ -116,7 +118,7 @@ ata_g.for_each_link do |i,j|
   link_label[e].push( histo_to_action.call(j) )
 end
 link_label = link_label.map {|k,v| [k, v.sort.uniq.join(',')] }.to_h
-$stderr.puts link_label.inspect
+$stderr.puts link_label.inspect if DEBUG
 
 $stdout.puts as_g.to_dot(remove_isolated: true, node_attributes: attr, edge_labels: link_label)
 
