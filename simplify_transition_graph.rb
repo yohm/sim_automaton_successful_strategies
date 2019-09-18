@@ -107,6 +107,8 @@ ata_g = str.transition_graph
 # end
 uf, as_g = construct_AS_graph( ata_g, histo_to_action )
 $stderr.puts uf.tree.inspect if DEBUG
+#puts "#{s} #{uf.tree.size} #{s.count('c')}"
+#exit
 mapped = uf.roots.map do |n|
   [ n, {label: "#{str.action(n)}@#{n}"} ]
 end
