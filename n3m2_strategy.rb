@@ -49,6 +49,11 @@ class FullState
     self.new(a_2, a_1, b_2, b_1, c_2, c_1)
   end
 
+  def self.make_from_bits( s )
+    raise "invalid arg: #{s}" unless s =~ /[cd]{6}/
+    self.new( *s.each_char.map(&:to_sym) )
+  end
+
   attr_reader :a_2,:a_1,:b_2,:b_1,:c_2,:c_1
 
   def initialize(a_2,a_1,b_2,b_1,c_2,c_1)

@@ -98,14 +98,14 @@ s = ARGV[0]
 if s.length == 40
   $stderr.puts "loading n=3,m=2 strategy: #{s}" if DEBUG
   str = N3M2::Strategy.make_from_bits(s)
-  init_state = N3M2::FullState.make_from_id(ARGV[1].to_i)
+  init_state = N3M2::FullState.make_from_bits(ARGV[1])
   str.show_actions_using_full_state($stderr) if DEBUG
   $stderr.puts "initial state : #{init_state}" if DEBUG
   histo_to_action = lambda {|x| [16,4,1].map{|m| ((x&m)==m)?'d':'c'}.join }
 elsif s.length == 512
   $stderr.puts "loading n=3,m=3 strategy: #{s}" if DEBUG
   str = N3M3::Strategy.make_from_bits(s)
-  init_state = N3M3::FullState.make_from_id(ARGV[1].to_i)
+  init_state = N3M3::FullState.make_from_bits(ARGV[1].to_i)
   str.show_actions($stderr) if DEBUG
   $stderr.puts "initial state : #{init_state}" if DEBUG
   histo_to_action = lambda {|x| [64,8,1].map{|m| ((x&m)==m)?'d':'c'}.join }
@@ -121,17 +121,11 @@ until visited.include?(s)
   s = str.next_full_state_with_self(s)
 end
 
-def history_for_each_player(s)
-  [:A,:B,:C].map {|x| s.state_from(x) }
-end
-puts visited.map {|s| history_for_each_player(s).map(&:to_s).inspect }
-
-$stderr.puts str.inspect if DEBUG
 uf, as_g = minimize_DFA( str.transition_graph, histo_to_action )
-
 $stderr.puts uf.tree.inspect if DEBUG
+
 visited.each do |s|
-  s_arr = history_for_each_player(s)
+  s_arr = [:A,:B,:C].map {|x| s.state_from(x) }
   puts s_arr.map(&:to_s).inspect
   puts s_arr.map {|s2| uf.root(s2.to_id) }.inspect
 end
