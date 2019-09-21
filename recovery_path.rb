@@ -5,6 +5,8 @@ require_relative 'graph'
 
 unless ARGV.size == 2
   $stderr.puts "usage: ruby #{__FILE__} cccdcccdcccdcccd cccd"
+  $stderr.puts "Example: ruby recovery_path.rb cddcdddcddcdddcddddddcccddddcccdddcddddd cccdcc"
+  $stderr.puts "Example: ruby recovery_path.rb cdcdcdcdddcdddddcccdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddccddcdddcdcdddcddcdddcddddddddddcdddcdddddcdddcddcdddcdddddddddddccddccdcccdccddccdccddcddccddccdccddccdccddccddcddccddcddccddcccdddcddddccdddcddcddccddddddddcdcdcdcdddddcdddcddcdcdcddddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdddcdddddcdddcddccddcddddddddddcdddcdddddcdddcddcdddcdddddddddddccddccdccddccddcddccddcddccddccdccddccdccddccddcddccddcddccddcccdddcdddddcdddcddcdddcddddddddddcdddcdddddcdddcddcdddcdddddddddd cccccdccc"
   raise "invalid number of arguments"
 end
 
@@ -105,7 +107,7 @@ if s.length == 40
 elsif s.length == 512
   $stderr.puts "loading n=3,m=3 strategy: #{s}" if DEBUG
   str = N3M3::Strategy.make_from_bits(s)
-  init_state = N3M3::FullState.make_from_bits(ARGV[1].to_i)
+  init_state = N3M3::FullState.make_from_bits(ARGV[1])
   str.show_actions($stderr) if DEBUG
   $stderr.puts "initial state : #{init_state}" if DEBUG
   histo_to_action = lambda {|x| [64,8,1].map{|m| ((x&m)==m)?'d':'c'}.join }
