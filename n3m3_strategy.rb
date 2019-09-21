@@ -66,6 +66,19 @@ class FullState
     [fs1,fs2]
   end
 
+  def state_from( player )
+    case player
+    when :A
+      self.clone
+    when :B
+      FullState.new(@b_3,@b_2,@b_1,@c_3,@c_2,@c_1,@a_3,@a_2,@a_1)
+    when :C
+      FullState.new(@c_3,@c_2,@c_1,@a_3,@a_2,@a_1,@b_3,@b_2,@b_1)
+    else
+      raise "must not happen"
+    end
+  end
+
   def next_state(act_a,act_b,act_c)
     self.class.new(@a_2,@a_1,act_a,@b_2,@b_1,act_b,@c_2,@c_1,act_c)
   end

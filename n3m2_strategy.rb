@@ -86,6 +86,19 @@ class FullState
     id
   end
 
+  def state_from( player )
+    case player
+    when :A
+      self.clone
+    when :B
+      FullState.new(@b_2,@b_1,@c_2,@c_1,@a_2,@a_1)
+    when :C
+      FullState.new(@c_2,@c_1,@a_2,@a_1,@b_2,@b_1)
+    else
+      raise "must not happen"
+    end
+  end
+
   def to_ss
     ss = []
     ss[0] = @a_2
