@@ -1,5 +1,3 @@
 *.dot
-*.pdf
-before.png
-after.png
+*.png
 fig_*
