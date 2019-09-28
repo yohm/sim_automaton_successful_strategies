@@ -42,6 +42,10 @@ class UnionFind
     ri,rj = rj,ri if ri > rj
     @par[rj] = ri
   end
+
+  def to_h
+    @par.size.times.group_by {|i| root(i) }
+  end
 end
 
 def mergeable(dest_i, dest_j, h2a, uf)
@@ -78,6 +82,51 @@ def construct_AS_graph(g, h2a)
   return uf, g2
 end
 
+
+def equivalent(dest_i, dest_j, h2a, uf)
+  # both action & next state must be identical
+  di = dest_i.map {|x| [h2a.call(x), uf.root(x)] }.sort
+  dj = dest_j.map {|x| [h2a.call(x), uf.root(x)] }.sort
+  di == dj
+end
+
+def minimize_DFA(g, h2a)
+  uf_0 = UnionFind.new(g.n)
+  # initial grouping by the action c/d
+  g.n.times do |i|
+    act = h2a.call( g.links[i][0] )[0]
+    if act == 'c'
+      uf_0.merge(i, 0)
+    else
+      uf_0.merge(i, g.n-1)
+    end
+  end
+
+  loop do
+    uf_0_h = uf_0.to_h
+    uf = UnionFind.new(g.n)
+    uf_0_h.each do |r,s|  # refinint a set in uf_0
+      s.combination(2).each do |i,j|
+        if equivalent(g.links[i], g.links[j], h2a, uf_0)
+          uf.merge(i,j)
+        end
+      end
+    end
+    break if uf.to_h == uf_0_h
+    uf_0 = uf
+  end
+
+  g2 = DirectedGraph.new(g.n)
+  g.for_each_link do |i,j|
+    ri = uf_0.root(i)
+    rj = uf_0.root(j)
+    g2.add_link(ri,rj)
+  end
+  g2.remove_duplicated_links!
+
+  return uf_0, g2
+end
+
 DEBUG = true
 
 s = ARGV[0]
@@ -105,7 +154,20 @@ ata_g = str.transition_graph
 # File.open('before.dot', 'w') do |io|
 #   io.puts str.transition_graph.to_dot(remove_isolated: true)
 # end
-uf, as_g = construct_AS_graph( ata_g, histo_to_action )
+uf, as_g = minimize_DFA( ata_g, histo_to_action )
+if DEBUG
+  $stderr.print "comparing two methods : "
+  uf2, as_g2 = construct_AS_graph( ata_g, histo_to_action )
+  if uf.to_h == uf2.to_h
+    $stderr.puts "OK"
+  else
+    $stderr.puts "NG"
+    $stderr.puts uf.inspect, uf2.inspect
+    raise "inconsistency is found"
+  end
+  exit
+end
+
 $stderr.puts uf.tree.inspect if DEBUG
 #puts "#{s} #{uf.tree.size} #{s.count('c')}"
 #exit
