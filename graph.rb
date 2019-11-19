@@ -17,19 +17,19 @@ class DirectedGraph
 
   def sccs
     f = ComponentFinder.new(self)
-    f.strongly_connected_components
+    s = f.strongly_connected_components
+    has_self_loops = s.select {|scc| scc.size == 1}.flatten.select do |n|
+      @links[n].include?(n)
+    end
+    s.select {|scc| scc.size > 1} + has_self_loops.map {|n| [n]}
   end
 
   def transient_nodes
-    isolated_nodes = sccs.select {|scc| scc.size == 1 }.flatten
-    has_selfloop = isolated_nodes.select do |n|
-      @links[n].include?(n)
-    end
-    isolated_nodes - has_selfloop
+    (0..(@n-1)).to_a - sccs.flatten
   end
 
   def non_transient_nodes
-    (0..(@n-1)).to_a - transient_nodes
+    sccs.flatten
   end
 
   def remove_duplicated_links!
@@ -189,7 +189,7 @@ if __FILE__ == $0
     end
 
     def test_sccs
-      assert_equal [ [0,1,2], [3], [4] ], @g.sccs.map(&:sort).sort
+      assert_equal [ [0,1,2], [4] ], @g.sccs.map(&:sort).sort
     end
 
     def test_transient_nodes

@@ -227,11 +227,15 @@ class Strategy
   end
 
   def transition_graph_with_self
+    transition_graph_with(self)
+  end
+
+  def transition_graph_with( other_s )
     g = DirectedGraph.new(N)
     N.times do |i|
       s = State.make_from_id(i)
-      n = next_state_with_self(s)
-      g.add_link( i, n.to_i )
+      n = s.next_state( action(s), other_s.action(s.swap) )
+      g.add_link(i, n.to_i)
     end
     g
   end
@@ -257,6 +261,57 @@ class Strategy
       end
     end
     true
+  end
+
+  def efficient?
+    g0 = transition_graph_with_self
+
+    judged = Array.new(N, false)
+    judged[0] = true
+
+    g = g0
+
+    while true
+      # l -> 0
+      judged.each_with_index do |b,l|
+        next if b
+        judged[l] = true if g.is_accessible?(l, 0)
+      end
+      return true if judged.all?
+
+      # update gn
+      update_gn(g)
+
+      # 0 -> l
+      judged.each_with_index do |b,l|
+        next if b
+        return false if g.is_accessible?(0, l)
+      end
+    end
+  end
+
+  def update_gn(gn)
+    noised_states = lambda {|s| [s^1, s^8] }
+
+    # find sink sccs
+    sink_sccs = gn.sccs.select do |c|
+      c.all? do |n|
+        gn.links[n].all? do |d|
+          c.include?(d)
+        end
+      end
+    end
+
+    sink_sccs.each do |sink|
+      sink.each do |from|
+        noised_states.call(from).each do |to|
+          unless gn.links[from].include?(to)
+            gn.add_link(from, to)
+          end
+        end
+      end
+    end
+    return gn
   end
 end
 
@@ -303,6 +358,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal :d, s.action(0)
       assert_equal 'cdcd', s.next_state_with_self( State.make_from_str('cccc') ).to_s
       assert_equal true, s.defensible?
+      assert_equal false, s.efficient?
     end
 
     def test_allC
@@ -311,6 +367,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal :c, s.action(15)
       assert_equal 'dccc', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal false, s.defensible?
+      assert_equal true, s.efficient?
     end
 
     def test_TFT
@@ -319,6 +376,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal :d, s.action('cccd')
       assert_equal 'dccd', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal true, s.defensible?
+      assert_equal false, s.efficient?
     end
 
     def test_WSLS
@@ -328,6 +386,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal :c, s.action('dddd')
       assert_equal 'ddcd', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal false, s.defensible?
+      assert_equal true, s.efficient?
     end
 
     def test_TFT_ATFT
@@ -337,6 +396,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal :d, s.action('dddd')
       assert_equal 'ddcd', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal true, s.defensible?
+      assert_equal true, s.efficient?
     end
   end
 elsif __FILE__ == $0 and ARGV.size > 0
