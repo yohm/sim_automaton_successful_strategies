@@ -231,12 +231,16 @@ EOS
   end
 
   def next_full_state_with_self(s)
+    next_full_state_with(s, self, self)
+  end
+
+  def next_full_state_with(s, b_strategy, c_strategy)
     act_a = action(s.to_id)
     state_b = FullState.new( s.b_3, s.b_2, s.b_1, s.c_3, s.c_2, s.c_1, s.a_3, s.a_2, s.a_1 )
-    act_b = action(state_b.to_id)
-    state_c = FullState.new( s.c_3, s.c_2, s.c_1, s.b_3, s.b_2, s.b_1, s.a_3, s.a_2, s.a_1 )
-    act_c = action(state_c.to_id)
-    s.next_state(act_a, act_b, act_c )
+    act_b = b_strategy.action(state_b.to_id)
+    state_c = FullState.new( s.c_3, s.c_2, s.c_1, s.a_3, s.a_2, s.a_1, s.b_3, s.b_2, s.b_1 )
+    act_c = c_strategy.action(state_c.to_id)
+    s.next_state(act_a, act_b, act_c)
   end
 
   def transition_graph
@@ -252,17 +256,39 @@ EOS
   end
 
   def transition_graph_with_self
+    transition_graph_with(self, self)
+  end
+
+  def transition_graph_with(b_strategy, c_strategy)
     g = DirectedGraph.new(N)
     N.times do |i|
       current = FullState.make_from_id(i)
-      next_s = next_full_state_with_self(current)
-      g.add_link( i, next_s.to_id )
+      j = next_full_state_with(current, b_strategy, c_strategy).to_id
+      g.add_link( i, j )
     end
     g
   end
 
   def defensible?
-    defensible_against(:B) and defensible_against(:C)
+    if symmetric_with_BC_swap?
+      defensible_against(:B)
+    else
+      $stderr.puts "Warning: not symmetric with respect to the swap of BC"
+      defensible_against(:B) and defensible_against(:C)
+    end
+  end
+
+  def symmetric_with_BC_swap?
+    checked = Array.new(N, false)
+    N.times do |i|
+      next if checked[i]
+      s = FullState.make_from_id(i)
+      swapped = FullState.new(s.a_3,s.a_2,s.a_1, s.c_3,s.c_2,s.c_1, s.b_3,s.b_2,s.b_1)
+      return false unless action(s.to_id) == action(swapped.to_id)
+      checked[s.to_id] = true
+      checked[swapped.to_id] = true
+    end
+    true
   end
 
   def defensible_against(coplayer=:B)
@@ -276,6 +302,7 @@ EOS
       end
     end
     N.times do |k|
+      $stderr.puts "#{k} / #{N}" if k % (N/8) == 0
       N.times do |i|
         N.times do |j|
           if d[i][j] > d[i][k] + d[k][j]
@@ -286,6 +313,57 @@ EOS
       end
     end
     true
+  end
+
+  def efficient?
+    g0 = transition_graph_with_self
+
+    judged = Array.new(N, false)
+    judged[0] = true
+
+    g = g0
+
+    while true
+      # l -> 0
+      judged.each_with_index do |b,l|
+        next if b
+        judged[l] = true if g.is_accessible?(l, 0)
+      end
+      return true if judged.all?
+
+      # update gn
+      update_gn(g)
+
+      # 0 -> l
+      judged.each_with_index do |b,l|
+        next if b
+        return false if g.is_accessible?(0, l)
+      end
+    end
+  end
+
+  def update_gn(gn)
+    noised_states = lambda {|s| [s^1, s^8, s^64] }
+
+    # find sink sccs
+    sink_sccs = gn.sccs.select do |c|
+      c.all? do |n|
+        gn.links[n].all? do |d|
+          c.include?(d)
+        end
+      end
+    end
+
+    sink_sccs.each do |sink|
+      sink.each do |from|
+        noised_states.call(from).each do |to|
+          unless gn.links[from].include?(to)
+            gn.add_link(from, to)
+          end
+        end
+      end
+    end
+    gn
   end
 
   def trace_state_until_cycle(s)
@@ -395,8 +473,26 @@ if __FILE__ == $0
 
   class StrategyTest < Minitest::Test
 
-    PS2_bits = "cdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddccddccddcccdcccddcdddcddddddddddccddccddcccdcccddcdddcdddddddddddccddccdccddccddcdcccdccddccddccdccddccdccddccddcdcccdccddccddccccddccddcdcdcdcddcdddcddddddddddccddccddcdcdcdcddcdddcddddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddccddccddcccdcccddcdddcddddddddddccddccddcccdcccddcdddcdddddddddddccddccdccddccddcdcccdccddccddccdccddccdccddccddcdcccdccddccddccccddccddcdcdcdcddcdddcddddddddddccddccddcdcdcdcddcdddcdddddddddd".freeze
-    SS_bits = "cdcdcdcdddcdddddcccdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddccddccddcccdcccddcdddcddddddddddccddccddcccdcccddcdddcdddddddddddccddccdcccdccddcccccdccddccddccdccddccdccddccddcdcccdccddccddccccddccddcccdcdcddcddccddddddddcdcccdccddcdcdcdcddcdcdcddddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddccddccddcccdcccddccddcddddddddddccddccddcccdcccddcdddcdddddddddddccddccdccddccddcdcccdccddccddccdccddccdccddccddcdcccdccddccddccccddccddcdcdcdcddcdddcddddddddddccddccddcdcdcdcddcdddcdddddddddd".freeze
+    PS2_bits = "cdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdc"+
+               "dcdddddddddccddccddcccdcccddcdddcddddddddddccddccddcc"+
+               "cdcccddcdddcdddddddddddccddccdccddccddcdcccdccddccddc"+
+               "cdccddccdccddccddcdcccdccddccddccccddccddcdcdcdcddcdd"+
+               "dcddddddddddccddccddcdcdcdcddcdddcddddddddddcdcdcdcdd"+
+               "dddddddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcddddddd"+
+               "ddccddccddcccdcccddcdddcddddddddddccddccddcccdcccddcd"+
+               "ddcdddddddddddccddccdccddccddcdcccdccddccddccdccddccd"+
+               "ccddccddcdcccdccddccddccccddccddcdcdcdcddcdddcddddddd"+
+               "dddccddccddcdcdcdcddcdddcdddddddddd"
+    SS_bits = "cdcdcdcdddcdddddcccdcdcdddddddddcdcdcdcdddddddddcdcdcd"+
+              "cdddddddddccddccddcccdcccddcdddcddddddddddccddccddcccd"+
+              "cccddcdddcdddddddddddccddccdcccdccddcccccdccddccddccdc"+
+              "cddccdccddccddcdcccdccddccddccccddccddcccdcdcddcddccdd"+
+              "ddddddcdcccdccddcdcdcdcddcdcdcddddddddddcdcdcdcddddddd"+
+              "ddcdcdcdcdddddddddcdcdcdcdddddddddcdcdcdcdddddddddccdd"+
+              "ccddcccdcccddccddcddddddddddccddccddcccdcccddcdddcdddd"+
+              "dddddddccddccdccddccddcdcccdccddccddccdccddccdccddccdd"+
+              "cdcccdccddccddccccddccddcdcdcdcddcdddcddddddddddccddcc"+
+              "ddcdcdcdcddcdddcdddddddddd"
 
     def test_allD
       bits = "d"*512
@@ -414,7 +510,8 @@ if __FILE__ == $0
       next_state = stra.next_full_state_with_self(s)
       assert_equal 'ccd-cdd-dcd', next_state.to_s
 
-      # assert_equal true, stra.defensible?  # it takes too long time
+      assert_equal true, stra.defensible?  # it takes long time
+      assert_equal false, stra.efficient?
     end
 
     def test_allC
@@ -434,6 +531,7 @@ if __FILE__ == $0
       assert_equal 'ccc-cdc-dcc', next_state.to_s
 
       assert_equal false, stra.defensible?
+      assert_equal true, stra.efficient?
     end
 
     def test_make_from_m2_strategy
@@ -454,6 +552,15 @@ if __FILE__ == $0
 
       assert_equal :c, stra.action(0)
       assert_equal :d, stra.action(511)
+
+      assert_equal true, stra.defensible?
+      assert_equal true, stra.efficient?
+    end
+
+    def test_PS2
+      stra = Strategy.make_from_bits(PS2_bits)
+      assert_equal true, stra.defensible?
+      assert_equal false, stra.efficient?
     end
 
     def test_recovery_allC
@@ -592,7 +699,6 @@ if __FILE__ == $0
       trace = stra.trace_state_until_cycle(s)
       assert_equal 'ccc-ccc-ccc', trace.last.to_s
     end
-
   end
 
 end

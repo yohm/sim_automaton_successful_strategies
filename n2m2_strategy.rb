@@ -311,7 +311,7 @@ class Strategy
         end
       end
     end
-    return gn
+    gn
   end
 end
 
