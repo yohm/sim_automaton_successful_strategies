@@ -198,9 +198,8 @@ if __FILE__ == $0
     end
 
     def test_to_dot
-      sio = StringIO.new
-      @g.to_dot(sio)
-      assert_equal sio.string.empty?, false
+      s = @g.to_dot
+      assert_equal s.empty?, false
     end
 
     def test_dfs
