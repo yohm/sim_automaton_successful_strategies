@@ -161,6 +161,8 @@ end
 
 class Strategy
 
+  N = 64
+
   def initialize( actions )
     @strategy = Hash[ State::ALL_STATES.zip( actions ) ]
   end
@@ -172,7 +174,7 @@ class Strategy
   end
 
   def to_64a
-    64.times.map do |i|
+    N.times.map do |i|
       fs = FullState.make_from_id(i)
       act = @strategy[fs.to_ss]
     end
@@ -186,7 +188,7 @@ class Strategy
   end
 
   def show_actions_using_full_state(io)
-    64.times do |i|
+    N.times do |i|
       fs = FullState.make_from_id(i)
       act = @strategy[fs.to_ss]
       io.print "#{act}@#{fs}\t"
@@ -263,8 +265,8 @@ class Strategy
   end
 
   def transition_graph
-    g = DirectedGraph.new(64)
-    64.times do |i|
+    g = DirectedGraph.new(N)
+    N.times do |i|
       fs = FullState.make_from_id(i)
       next_fss = possible_next_full_states(fs)
       next_fss.each do |next_fs|
@@ -274,9 +276,10 @@ class Strategy
     g
   end
 
+
   def transition_graph_with_self
-    g = DirectedGraph.new(64)
-    64.times do |i|
+    g = DirectedGraph.new(N)
+    N.times do |i|
       fs = FullState.make_from_id(i)
       next_fs = next_full_state_with_self(fs)
       g.add_link( i, next_fs.to_id )
@@ -284,98 +287,31 @@ class Strategy
     g
   end
 
-  def self.node_attributes
-    node_attributes = {}
-    64.times do |i|
-      fs = FullState.make_from_id(i)
-      node_attributes[i] = {}
-      node_attributes[i][:label] = "#{i}_#{fs.to_s}"
-    end
-    node_attributes
+  def defensible?
+    defensible_against(:B) and defensible_against(:C)
   end
 
-  def defensible?
-    a1_b, a1_c = AMatrix.construct_a1_matrix(self) # construct_a1_matrix
-    a_b, a_c = AMatrix.construct_a1_matrix(self)
-    return false if( a_b.has_negative_diagonal? or a_c.has_negative_diagonal? )
-
-    63.times do |t|
-      a_b.update( a1_b )
-      a_c.update( a1_c )
-      return false if( a_b.has_negative_diagonal? or a_c.has_negative_diagonal? )
+  def defensible_against(coplayer=:B)
+    d = Array.new(N) { Array.new(N, Float::INFINITY) }
+    N.times do |i|
+      s = FullState.make_from_id(i)
+      ns = possible_next_full_states(s)
+      ns.each do |n|
+        j = n.to_id
+        d[i][j] = s.relative_payoff_against(coplayer)
+      end
+    end
+    N.times do |k|
+      N.times do |i|
+        N.times do |j|
+          if d[i][j] > d[i][k] + d[k][j]
+            d[i][j] = d[i][k] + d[k][j]
+          end
+        end
+        return false if d[i][i] < 0
+      end
     end
     true
-  end
-
-  class AMatrix  # class used for judging defensibility
-
-    N=64
-
-    def self.construct_a1_matrix(stra)
-      a_b = self.new
-      a_c = self.new
-
-      N.times do |i|
-        fs = FullState.make_from_id(i)
-        N.times do |j|
-          a_b.a[i][j] = :inf
-          a_c.a[i][j] = :inf
-        end
-        next_fss = stra.possible_next_full_states(fs)
-        next_fss.each do |ns|
-          j = ns.to_id
-          a_b.a[i][j] = ns.relative_payoff_against(:B)
-          a_c.a[i][j] = ns.relative_payoff_against(:C)
-        end
-      end
-      [a_b, a_c]
-    end
-
-    attr_reader :a
-
-    def initialize
-      @a = Array.new(64) {|i| Array.new(64,0) }
-    end
-
-    def inspect
-      sio = StringIO.new
-      @a.size.times do |i|
-        @a[i].size.times do |j|
-          if @a[i][j] == :inf
-            sio.print(" ##,")
-          else
-            sio.printf("%3d,", @a[i][j])
-          end
-        end
-        sio.print "\n"
-      end
-      sio.string
-    end
-
-    def has_negative_diagonal?
-      @a.size.times do |i|
-        if @a[i][i] != :inf and @a[i][i] < 0
-          return true
-        end
-      end
-      false
-    end
-
-    def update( a1 )
-      temp = Array.new(64) {|i| Array.new(64,:inf) }
-
-      @a.size.times do |i|
-        @a.size.times do |j|
-          @a.size.times do |k|
-            x = @a[i][k]
-            y = a1.a[k][j]
-            next if x == :inf or y == :inf
-            temp[i][j] = x+y if temp[i][j] == :inf or x+y < temp[i][j]
-          end
-        end
-      end
-      @a = temp
-    end
   end
 
 end

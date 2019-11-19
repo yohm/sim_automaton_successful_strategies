@@ -116,11 +116,11 @@ end
 
 class Strategy
 
-  A = [:c,:d]
+  N = 16
 
   def initialize( actions )
-    raise unless actions.size == 16
-    raise unless actions.all? {|a| self.class::A.include?(a) }
+    raise unless actions.size == N
+    raise unless actions.all? {|a| a == :c or a == :d }
     @strategy = actions.dup
   end
 
@@ -215,8 +215,8 @@ class Strategy
   end
 
   def transition_graph
-    g = DirectedGraph.new(16)
-    16.times do |i|
+    g = DirectedGraph.new(N)
+    N.times do |i|
       s = State.make_from_id(i)
       next_ss = possible_next_states(s)
       next_ss.each do |n|
@@ -227,8 +227,8 @@ class Strategy
   end
 
   def transition_graph_with_self
-    g = DirectedGraph.new(16)
-    16.times do |i|
+    g = DirectedGraph.new(N)
+    N.times do |i|
       s = State.make_from_id(i)
       n = next_state_with_self(s)
       g.add_link( i, n.to_i )
@@ -236,19 +236,9 @@ class Strategy
     g
   end
 
-  def self.node_attributes
-    node_attributes = {}
-    64.times do |i|
-      s = State.make_from_id(i)
-      node_attributes[i] = {}
-      node_attributes[i][:label] = "#{i}_#{s}"
-    end
-    node_attributes
-  end
-
   def defensible?
-    m = Array.new(16) { Array.new(16, Float::INFINITY) }
-    16.times do |i|
+    m = Array.new(N) { Array.new(N, Float::INFINITY) }
+    N.times do |i|
       s = State.make_from_id(i)
       ns = possible_next_states(s)
       ns.each do |n|
@@ -256,9 +246,9 @@ class Strategy
         m[i][j] = n.relative_payoff
       end
     end
-    16.times do |k|
-      16.times do |i|
-        16.times do |j|
+    N.times do |k|
+      N.times do |i|
+        N.times do |j|
           if m[i][j] > m[i][k] + m[k][j]
             m[i][j] = m[i][k] + m[k][j]
           end

@@ -121,9 +121,11 @@ end
 
 class Strategy
 
+  N = FullState::NUM_STATES
+
   def initialize( actions )
     raise "invalid arg" unless actions.all? {|act| act == :c or act == :d }
-    raise "invalid arg" unless actions.size == 512
+    raise "invalid arg" unless actions.size == N
     @actions = actions.dup
   end
 
@@ -190,7 +192,7 @@ EOS
 
   def self.make_from_m2_strategy( m2_stra )
     acts = []
-    FullState::NUM_STATES.times do |i|
+    N.times do |i|
       m3_stat = FullState.make_from_id(i)
       m2_stat = m3_stat.to_m2_states.last
       act = m2_stra.action( m2_stat.to_ss )
@@ -238,8 +240,8 @@ EOS
   end
 
   def transition_graph
-    g = DirectedGraph.new(512)
-    512.times do |i|
+    g = DirectedGraph.new(N)
+    N.times do |i|
       s = FullState.make_from_id(i)
       next_ss = possible_next_full_states(s)
       next_ss.each do |ns|
@@ -250,8 +252,8 @@ EOS
   end
 
   def transition_graph_with_self
-    g = DirectedGraph.new(512)
-    512.times do |i|
+    g = DirectedGraph.new(N)
+    N.times do |i|
       current = FullState.make_from_id(i)
       next_s = next_full_state_with_self(current)
       g.add_link( i, next_s.to_id )
@@ -259,26 +261,29 @@ EOS
     g
   end
 
-  def self.node_attributes
-    attr = {}
-    512.times do |i|
-      s = FullState.make_from_id(i)
-      attr[i] = {}
-      attr[i][:label] = "#{i}_#{s.to_s}"
-    end
-    attr
+  def defensible?
+    defensible_against(:B) and defensible_against(:C)
   end
 
-  def defensible?
-    a1_b, a1_c = AMatrix.construct_a1_matrix(self) # construct_a1_matrix
-    a_b, a_c = AMatrix.construct_a1_matrix(self)
-    return false if( a_b.has_negative_diagonal? or a_c.has_negative_diagonal? )
-
-    FullState::NUM_STATES.times do |t|
-      # $stderr.puts "step: #{t}/#{FullState::NUM_STATES}"
-      a_b.update( a1_b )
-      a_c.update( a1_c )
-      return false if( a_b.has_negative_diagonal? or a_c.has_negative_diagonal? )
+  def defensible_against(coplayer=:B)
+    d = Array.new(N) { Array.new(N, Float::INFINITY) }
+    N.times do |i|
+      s = FullState.make_from_id(i)
+      ns = possible_next_full_states(s)
+      ns.each do |n|
+        j = n.to_id
+        d[i][j] = s.relative_payoff_against(coplayer)
+      end
+    end
+    N.times do |k|
+      N.times do |i|
+        N.times do |j|
+          if d[i][j] > d[i][k] + d[k][j]
+            d[i][j] = d[i][k] + d[k][j]
+          end
+        end
+        return false if d[i][i] < 0
+      end
     end
     true
   end
@@ -336,78 +341,6 @@ EOS
     modify_action('cdddcccdc',:c) # (35->48)
     modify_action('cddcdcdcc',:c) # (35->48)
   end
-
-  class AMatrix  # class used for judging defensibility
-
-    N = FullState::NUM_STATES
-
-    def self.construct_a1_matrix(stra)
-      a_b = self.new
-      a_c = self.new
-
-      N.times do |i|
-        fs = FullState.make_from_id(i)
-        N.times do |j|
-          a_b.a[i][j] = :inf
-          a_c.a[i][j] = :inf
-        end
-        next_fss = stra.possible_next_full_states(fs)
-        next_fss.each do |ns|
-          j = ns.to_id
-          a_b.a[i][j] = ns.relative_payoff_against(:B)
-          a_c.a[i][j] = ns.relative_payoff_against(:C)
-        end
-      end
-      [a_b, a_c]
-    end
-
-    attr_reader :a
-
-    def initialize
-      @a = Array.new(N) {|i| Array.new(N,0) }
-    end
-
-    def inspect
-      sio = StringIO.new
-      @a.size.times do |i|
-        @a[i].size.times do |j|
-          if @a[i][j] == :inf
-            sio.print(" ##,")
-          else
-            sio.printf("%3d,", @a[i][j])
-          end
-        end
-        sio.print "\n"
-      end
-      sio.string
-    end
-
-    def has_negative_diagonal?
-      @a.size.times do |i|
-        if @a[i][i] != :inf and @a[i][i] < 0
-          return true
-        end
-      end
-      false
-    end
-
-    def update( a1 )
-      temp = Array.new(N) {|i| Array.new(N,:inf) }
-
-      N.times do |i|
-        N.times do |j|
-          N.times do |k|
-            x = @a[i][k]
-            y = a1.a[k][j]
-            next if x == :inf or y == :inf
-            temp[i][j] = x+y if temp[i][j] == :inf or x+y < temp[i][j]
-          end
-        end
-      end
-      @a = temp
-    end
-  end
-
 end
 
 end
