@@ -291,7 +291,7 @@ class Strategy
   end
 
   def update_gn(gn)
-    noised_states = lambda {|s| [s^1, s^8] }
+    noised_states = lambda {|s| [s^1, s^4] }
 
     # find sink sccs
     sink_sccs = gn.sccs.select do |c|
