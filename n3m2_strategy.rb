@@ -347,6 +347,32 @@ class Strategy
     end
   end
 
+  def distinguishable?
+    allc = Strategy.make_from_bits('c'*40)
+    g = transition_graph_with(allc, allc)
+
+    judged = Array.new(N, false)
+    judged[0] = true
+
+    while true
+      # l -> 0
+      judged.each_with_index do |b,l|
+        next if b
+        judged[l] = true if g.is_accessible?(l, 0)
+      end
+      return false if judged.all?
+
+      # update gn
+      update_gn(g)
+
+      # 0 -> l
+      judged.each_with_index do |b,l|
+        next if b
+        return true if g.is_accessible?(0, l)
+      end
+    end
+  end
+
   def update_gn(gn)
     noised_states = lambda {|s| [s^1, s^4, s^16] }
 
@@ -443,6 +469,7 @@ if __FILE__ == $0 and ARGV.size != 1
 
       assert_equal true, strategy.defensible?
       assert_equal false, strategy.efficient?
+      assert_equal true, strategy.distinguishable?
     end
 
     def test_allC
@@ -462,6 +489,7 @@ if __FILE__ == $0 and ARGV.size != 1
 
       assert_equal false, strategy.defensible?
       assert_equal true, strategy.efficient?
+      assert_equal false, strategy.distinguishable?
     end
 
     def test_a_strategy
@@ -485,6 +513,7 @@ if __FILE__ == $0 and ARGV.size != 1
 
       assert_equal false, strategy.defensible?
       assert_equal false, strategy.efficient?
+      assert_equal true, strategy.distinguishable?
     end
 
     def test_AON2
@@ -506,6 +535,7 @@ if __FILE__ == $0 and ARGV.size != 1
 
       assert_equal false, strategy.defensible?
       assert_equal true, strategy.efficient?
+      assert_equal true, strategy.distinguishable?
     end
 
     def test_most_generous_PS2
@@ -527,6 +557,7 @@ if __FILE__ == $0 and ARGV.size != 1
       assert_equal "c#{move_a}c#{move_b}d#{move_c}", next_state.to_s
       assert_equal true, strategy.defensible?
       assert_equal false, strategy.efficient?
+      assert_equal true, strategy.distinguishable?
     end
   end
 end

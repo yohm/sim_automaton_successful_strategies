@@ -290,6 +290,32 @@ class Strategy
     end
   end
 
+  def distinguishable?
+    allc = Strategy.make_from_str('c'*N)
+    g = transition_graph_with(allc)
+
+    judged = Array.new(N, false)
+    judged[0] = true
+
+    while true
+      # l -> 0
+      judged.each_with_index do |b,l|
+        next if b
+        judged[l] = true if g.is_accessible?(l, 0)
+      end
+      return false if judged.all?
+
+      # update gn
+      update_gn(g)
+
+      # 0 -> l
+      judged.each_with_index do |b,l|
+        next if b
+        return true if g.is_accessible?(0, l)
+      end
+    end
+  end
+
   def update_gn(gn)
     noised_states = lambda {|s| [s^1, s^4] }
 
@@ -317,7 +343,7 @@ end
 
 end
 
-if __FILE__ == $0 and ARGV.size == 0
+if __FILE__ == $0 and ARGV.size != 1
   require 'minitest/autorun'
 
   class StateTest < Minitest::Test
@@ -359,6 +385,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal 'cdcd', s.next_state_with_self( State.make_from_str('cccc') ).to_s
       assert_equal true, s.defensible?
       assert_equal false, s.efficient?
+      assert_equal true, s.distinguishable?
     end
 
     def test_allC
@@ -368,6 +395,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal 'dccc', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal false, s.defensible?
       assert_equal true, s.efficient?
+      assert_equal false, s.distinguishable?
     end
 
     def test_TFT
@@ -377,6 +405,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal 'dccd', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal true, s.defensible?
       assert_equal false, s.efficient?
+      assert_equal false, s.distinguishable?
     end
 
     def test_WSLS
@@ -387,6 +416,7 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal 'ddcd', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal false, s.defensible?
       assert_equal true, s.efficient?
+      assert_equal true, s.distinguishable?
     end
 
     def test_TFT_ATFT
@@ -397,12 +427,11 @@ if __FILE__ == $0 and ARGV.size == 0
       assert_equal 'ddcd', s.next_state_with_self( State.make_from_str('cdcc') ).to_s
       assert_equal true, s.defensible?
       assert_equal true, s.efficient?
+      assert_equal true, s.distinguishable?
     end
   end
-elsif __FILE__ == $0 and ARGV.size > 0
-  ARGV.each do |s|
-    pp N2M2::Strategy.make_from_str(s)
-  end
+elsif __FILE__ == $0 and ARGV.size == 1
+  pp N2M2::Strategy.make_from_str(ARGV[0])
 end
 
 

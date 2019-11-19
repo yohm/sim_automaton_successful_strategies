@@ -342,6 +342,32 @@ EOS
     end
   end
 
+  def distinguishable?
+    allc = Strategy.make_from_bits('c'*512)
+    g = transition_graph_with(allc, allc)
+
+    judged = Array.new(N, false)
+    judged[0] = true
+
+    while true
+      # l -> 0
+      judged.each_with_index do |b,l|
+        next if b
+        judged[l] = true if g.is_accessible?(l, 0)
+      end
+      return false if judged.all?
+
+      # update gn
+      update_gn(g)
+
+      # 0 -> l
+      judged.each_with_index do |b,l|
+        next if b
+        return true if g.is_accessible?(0, l)
+      end
+    end
+  end
+
   def update_gn(gn)
     noised_states = lambda {|s| [s^1, s^8, s^64] }
 
@@ -512,6 +538,7 @@ if __FILE__ == $0
 
       assert_equal true, stra.defensible?  # it takes long time
       assert_equal false, stra.efficient?
+      assert_equal true, stra.distinguishable?
     end
 
     def test_allC
@@ -532,6 +559,7 @@ if __FILE__ == $0
 
       assert_equal false, stra.defensible?
       assert_equal true, stra.efficient?
+      assert_equal false, stra.distinguishable?
     end
 
     def test_make_from_m2_strategy
@@ -555,12 +583,14 @@ if __FILE__ == $0
 
       assert_equal true, stra.defensible?
       assert_equal true, stra.efficient?
+      assert_equal true, stra.distinguishable?
     end
 
     def test_PS2
       stra = Strategy.make_from_bits(PS2_bits)
       assert_equal true, stra.defensible?
       assert_equal false, stra.efficient?
+      assert_equal true, stra.distinguishable?
     end
 
     def test_recovery_allC
