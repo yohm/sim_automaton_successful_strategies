@@ -1,6 +1,6 @@
 # Minimization of deterministic finite automata for successful strategies
 
-Code used for the manuscript [Y. Murase & S.K. Baek, (2019)]().
+Code used for the manuscript [Y. Murase & S.K. Baek, (2019)](https://arxiv.org/abs/1910.02634).
 
 ## Prerequisites
 
