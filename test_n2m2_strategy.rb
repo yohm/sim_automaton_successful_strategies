@@ -42,6 +42,10 @@ class StrategyTest < Minitest::Test
     assert_equal true, s.defensible?
     assert_equal false, s.efficient?
     assert_equal true, s.distinguishable?
+
+    uf,ga = s.minimize_DFA
+    assert_equal ({0=>[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]}), uf.to_h
+    assert_equal 1, ga.links.size
   end
 
   def test_allC
@@ -52,6 +56,10 @@ class StrategyTest < Minitest::Test
     assert_equal false, s.defensible?
     assert_equal true, s.efficient?
     assert_equal false, s.distinguishable?
+
+    uf,ga = s.minimize_DFA
+    assert_equal ({0=>[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]}), uf.to_h
+    assert_equal 1, ga.links.size
   end
 
   def test_TFT
@@ -62,6 +70,10 @@ class StrategyTest < Minitest::Test
     assert_equal true, s.defensible?
     assert_equal false, s.efficient?
     assert_equal false, s.distinguishable?
+
+    uf,ga = s.minimize_DFA
+    assert_equal ({0=>[0,2,4,6,8,10,12,14], 1=>[1,3,5,7,9,11,13,15]}), uf.to_h
+    assert_equal 2, ga.links.size
   end
 
   def test_WSLS
@@ -73,6 +85,10 @@ class StrategyTest < Minitest::Test
     assert_equal false, s.defensible?
     assert_equal true, s.efficient?
     assert_equal true, s.distinguishable?
+
+    uf,ga = s.minimize_DFA
+    assert_equal ({0=>[0,2,5,7,8,10,13,15], 1=>[1,3,4,6,9,11,12,14]}), uf.to_h
+    assert_equal 2, ga.links.size
   end
 
   def test_TFT_ATFT
@@ -84,6 +100,10 @@ class StrategyTest < Minitest::Test
     assert_equal true, s.defensible?
     assert_equal true, s.efficient?
     assert_equal true, s.distinguishable?
+
+    uf,ga = s.minimize_DFA
+    assert_equal ({0=>[0,2,6,8,10,11,14], 1=>[1,3,7,9,15], 4=>[4,12], 5=>[5,13]}), uf.to_h
+    assert_equal 4, ga.links.size
   end
 end
 
