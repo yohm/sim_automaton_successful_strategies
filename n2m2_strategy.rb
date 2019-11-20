@@ -78,6 +78,17 @@ class State
   end
   alias :to_i :to_id
 
+  def state_from( player )
+    case player
+    when :A
+      self.clone
+    when :B
+      State.new(@b_2,@b_1,@a_2,@a_1)
+    else
+      raise "must not happen"
+    end
+  end
+
   def next_state(act_a,act_b)
     self.class.new(@a_1,act_a,@b_1,act_b)
   end
