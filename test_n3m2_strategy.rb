@@ -70,6 +70,10 @@ class StrategyTest < Minitest::Test
     assert_equal true, strategy.defensible?
     assert_equal false, strategy.efficient?
     assert_equal true, strategy.distinguishable?
+
+    uf,ga = strategy.minimize_DFA
+    assert_equal ({0=>(0..63).to_a}), uf.to_h
+    assert_equal 1, ga.links.size
   end
 
   def test_allC
@@ -90,6 +94,10 @@ class StrategyTest < Minitest::Test
     assert_equal false, strategy.defensible?
     assert_equal true, strategy.efficient?
     assert_equal false, strategy.distinguishable?
+
+    uf,ga = strategy.minimize_DFA
+    assert_equal ({0=>(0..63).to_a}), uf.to_h
+    assert_equal 1, ga.links.size
   end
 
   def test_a_strategy
@@ -113,6 +121,21 @@ class StrategyTest < Minitest::Test
     assert_equal false, strategy.defensible?
     assert_equal false, strategy.efficient?
     assert_equal true, strategy.distinguishable?
+
+    uf,ga = strategy.minimize_DFA
+    expected = {0=>[0, 2, 8, 10, 34, 40, 42],
+                1=>[1, 4, 5, 21, 33, 36, 37, 38, 41, 53],
+                3=>[3, 9, 11, 19, 27, 35, 43, 51, 59],
+                6=>[6, 12, 14, 28, 30, 44, 46, 60, 62],
+                7=>[7, 13, 15, 39, 45, 47],
+                16=>[16, 58],
+                17=>[17, 25, 49, 57],
+                18=>[18, 24, 26, 48, 50, 56],
+                20=>[20, 22, 52, 54],
+                23=>[23, 29, 31, 55, 61, 63],
+                32=>[32]}
+    assert_equal expected, uf.to_h
+    assert_equal 11, ga.links.size
   end
 
   def test_AON2
@@ -135,6 +158,15 @@ class StrategyTest < Minitest::Test
     assert_equal false, strategy.defensible?
     assert_equal true, strategy.efficient?
     assert_equal true, strategy.distinguishable?
+
+    uf,ga = strategy.minimize_DFA
+    expected = {0=>[0, 21, 42, 63],
+                1=>[1, 3, 4, 5, 6, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                    22, 24, 25, 26, 27, 28, 30, 33, 35, 36, 37, 38, 39, 41, 43,
+                    44, 45, 46, 47, 48, 49, 50, 51, 52, 54, 56, 57, 58, 59, 60, 62],
+                2=>[2, 8, 10, 23, 29, 31, 32, 34, 40, 53, 55, 61]}
+    assert_equal expected, uf.to_h
+    assert_equal 3, ga.links.size
   end
 
   def test_most_generous_PS2
@@ -157,6 +189,19 @@ class StrategyTest < Minitest::Test
     assert_equal true, strategy.defensible?
     assert_equal false, strategy.efficient?
     assert_equal true, strategy.distinguishable?
+
+    uf,ga = strategy.minimize_DFA
+    expected = {0=>[0, 2, 8, 10, 17, 20, 22, 25, 33, 34, 36, 37, 40,
+                    42, 43, 46, 47, 49, 52, 54, 57],
+                1=>[1, 3, 9, 11, 19, 27, 35, 41, 51, 59],
+                4=>[4, 6, 12, 14, 28, 30, 38, 44, 60, 62],
+                5=>[5, 7, 13, 15, 23, 29, 31, 39, 45, 53, 55, 61, 63],
+                16=>[16, 48],
+                18=>[18, 24, 26, 50, 56, 58],
+                21=>[21],
+                32=>[32]}
+    assert_equal expected, uf.to_h
+    assert_equal 8, ga.links.size
   end
 end
 

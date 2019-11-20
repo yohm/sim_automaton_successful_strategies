@@ -406,6 +406,53 @@ EOS
     gn
   end
 
+  def minimize_DFA
+    uf_0 = UnionFind.new(N)
+    # initial grouping by the action c/d
+    c_rep = N.times.find {|i| action(i) == :c}
+    d_rep = N.times.find {|i| action(i) == :d}
+    N.times do |i|
+      t = (action(i)==:c ? c_rep : d_rep)
+      uf_0.merge(i, t)
+    end
+
+    loop do
+      uf_0_h = uf_0.to_h
+      uf = UnionFind.new(N)
+      uf_0_h.each do |r,s|  # refinint a set in uf_0
+        s.combination(2).each do |i,j|
+          if _equivalent(i, j, uf_0)
+            uf.merge(i,j)
+          end
+        end
+      end
+      break if uf.to_h == uf_0_h
+      uf_0 = uf
+    end
+
+    g = DirectedGraph.new(N)
+    transition_graph.for_each_link do |i,j|
+      ri = uf_0.root(i)
+      rj = uf_0.root(j)
+      g.add_link(ri,rj)
+    end
+    g.remove_duplicated_links!
+
+    return uf_0, g
+  end
+
+  def _equivalent(i, j, uf)
+    # both action & next state must be identical
+    raise unless action(i) == action(j)
+    act_a = action(i)
+    acts_other = [[:c,:c],[:c,:d],[:d,:c],[:d,:d]]
+    acts_other.all? do |act_b,act_c|
+      ni = State.make_from_id(i).next_state(act_a, act_b, act_c).to_id
+      nj = State.make_from_id(j).next_state(act_a, act_b, act_c).to_id
+      uf.root(ni) == uf.root(nj)
+    end
+  end
+
   def trace_state_until_cycle(s)
     g = transition_graph_with_self
     traced = []

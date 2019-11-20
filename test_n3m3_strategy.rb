@@ -89,6 +89,10 @@ class StrategyTest < Minitest::Test
     assert_equal true, stra.defensible?  # it takes long time
     assert_equal false, stra.efficient?
     assert_equal true, stra.distinguishable?
+
+    uf,ga = strategy.minimize_DFA
+    assert_equal ({0=>(0..63).to_a}), uf.to_h
+    assert_equal 1, ga.links.size
   end
 
   def test_allC
@@ -110,6 +114,10 @@ class StrategyTest < Minitest::Test
     assert_equal false, stra.defensible?
     assert_equal true, stra.efficient?
     assert_equal false, stra.distinguishable?
+
+    uf,ga = strategy.minimize_DFA
+    assert_equal ({0=>(0..63).to_a}), uf.to_h
+    assert_equal 1, ga.links.size
   end
 
   def test_make_from_m2_strategy
@@ -124,7 +132,7 @@ class StrategyTest < Minitest::Test
     assert_equal :c, m3_stra.action(511)
   end
 
-  def test_SS
+  def test_FUSS
     # the most generous successful strategy
     stra = Strategy.make_from_bits(SS_bits)
 
@@ -134,6 +142,9 @@ class StrategyTest < Minitest::Test
     assert_equal true, stra.defensible?
     assert_equal true, stra.efficient?
     assert_equal true, stra.distinguishable?
+
+    uf,ga = stra.minimize_DFA
+    assert_equal 12, ga.links.size
   end
 
   def test_PS2
@@ -141,6 +152,9 @@ class StrategyTest < Minitest::Test
     assert_equal true, stra.defensible?
     assert_equal false, stra.efficient?
     assert_equal true, stra.distinguishable?
+
+    uf,ga = stra.minimize_DFA
+    assert_equal 8, ga.links.size
   end
 
   def test_trace_states
