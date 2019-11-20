@@ -234,7 +234,7 @@ EOS
     @actions.all? {|a| a == :c or a == :d }
   end
 
-  def possible_next_full_states(current_fs)
+  def possible_next_states(current_fs)
     sid = current_fs.to_id
     act_a = action(sid)
     n1 = current_fs.next_state(act_a,:c,:c)
@@ -244,11 +244,11 @@ EOS
     [n1,n2,n3,n4]
   end
 
-  def next_full_state_with_self(s)
-    next_full_state_with(s, self, self)
+  def next_state_with_self(s)
+    next_state_with(s, self, self)
   end
 
-  def next_full_state_with(s, b_strategy, c_strategy)
+  def next_state_with(s, b_strategy, c_strategy)
     act_a = action(s.to_id)
     state_b = State.new( s.b_3, s.b_2, s.b_1, s.c_3, s.c_2, s.c_1, s.a_3, s.a_2, s.a_1 )
     act_b = b_strategy.action(state_b.to_id)
@@ -261,7 +261,7 @@ EOS
     g = DirectedGraph.new(N)
     N.times do |i|
       s = State.make_from_id(i)
-      next_ss = possible_next_full_states(s)
+      next_ss = possible_next_states(s)
       next_ss.each do |ns|
         g.add_link(i, ns.to_id)
       end
@@ -277,7 +277,7 @@ EOS
     g = DirectedGraph.new(N)
     N.times do |i|
       current = State.make_from_id(i)
-      j = next_full_state_with(current, b_strategy, c_strategy).to_id
+      j = next_state_with(current, b_strategy, c_strategy).to_id
       g.add_link( i, j )
     end
     g
@@ -309,7 +309,7 @@ EOS
     d = Array.new(N) { Array.new(N, Float::INFINITY) }
     N.times do |i|
       s = State.make_from_id(i)
-      ns = possible_next_full_states(s)
+      ns = possible_next_states(s)
       ns.each do |n|
         j = n.to_id
         d[i][j] = s.relative_payoff_against(coplayer)

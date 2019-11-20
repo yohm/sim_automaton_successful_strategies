@@ -79,19 +79,19 @@ class StrategyTest < Minitest::Test
     assert_equal true, stra.valid?
 
     s = State.new(:d,:c,:c,:c,:c,:d,:d,:d,:c)
-    nexts = stra.possible_next_full_states(s).map(&:to_s)
+    nexts = stra.possible_next_states(s).map(&:to_s)
     expected = ['ccd-cdc-dcc', 'ccd-cdc-dcd', 'ccd-cdd-dcc', 'ccd-cdd-dcd']
     assert_equal expected, nexts
 
-    next_state = stra.next_full_state_with_self(s)
+    next_state = stra.next_state_with_self(s)
     assert_equal 'ccd-cdd-dcd', next_state.to_s
 
     assert_equal true, stra.defensible?  # it takes long time
     assert_equal false, stra.efficient?
     assert_equal true, stra.distinguishable?
 
-    uf,ga = strategy.minimize_DFA
-    assert_equal ({0=>(0..63).to_a}), uf.to_h
+    uf,ga = stra.minimize_DFA
+    assert_equal ({0=>(0..511).to_a}), uf.to_h
     assert_equal 1, ga.links.size
   end
 
@@ -104,19 +104,19 @@ class StrategyTest < Minitest::Test
     assert_equal true, stra.valid?
 
     s = State.new(:d,:c,:c,:c,:c,:d,:d,:d,:c)
-    nexts = stra.possible_next_full_states(s).map(&:to_s)
+    nexts = stra.possible_next_states(s).map(&:to_s)
     expected = ['ccc-cdc-dcc', 'ccc-cdc-dcd', 'ccc-cdd-dcc', 'ccc-cdd-dcd']
     assert_equal expected, nexts
 
-    next_state = stra.next_full_state_with_self(s)
+    next_state = stra.next_state_with_self(s)
     assert_equal 'ccc-cdc-dcc', next_state.to_s
 
     assert_equal false, stra.defensible?
     assert_equal true, stra.efficient?
     assert_equal false, stra.distinguishable?
 
-    uf,ga = strategy.minimize_DFA
-    assert_equal ({0=>(0..63).to_a}), uf.to_h
+    uf,ga = stra.minimize_DFA
+    assert_equal ({0=>(0..511).to_a}), uf.to_h
     assert_equal 1, ga.links.size
   end
 

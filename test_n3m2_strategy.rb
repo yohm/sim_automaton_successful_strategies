@@ -60,11 +60,11 @@ class StrategyTest < Minitest::Test
     assert_equal :d, strategy.action([:d,:d,2,2] )
 
     s = State.new(:c,:c,:d,:c,:c,:d)
-    nexts = strategy.possible_next_full_states(s).map(&:to_s)
+    nexts = strategy.possible_next_states(s).map(&:to_s)
     expected = ['cdccdc', 'cdccdd', 'cdcddc', 'cdcddd']
     assert_equal expected, nexts
 
-    next_state = strategy.next_full_state_with_self(s)
+    next_state = strategy.next_state_with_self(s)
     assert_equal 'cdcddd', next_state.to_s
 
     assert_equal true, strategy.defensible?
@@ -84,11 +84,11 @@ class StrategyTest < Minitest::Test
     assert_equal :c, strategy.action([:d,:d,2,2] )
 
     s = State.new(:c,:c,:d,:c,:c,:d)
-    nexts = strategy.possible_next_full_states(s).map(&:to_s)
+    nexts = strategy.possible_next_states(s).map(&:to_s)
     expected = ['ccccdc', 'ccccdd', 'cccddc', 'cccddd']
     assert_equal expected, nexts
 
-    next_state = strategy.next_full_state_with_self(s)
+    next_state = strategy.next_state_with_self(s)
     assert_equal 'ccccdc', next_state.to_s
 
     assert_equal false, strategy.defensible?
@@ -109,11 +109,11 @@ class StrategyTest < Minitest::Test
 
     s = State.new(:c,:c,:d,:c,:c,:d)
     move_a = strategy.action([:c,:c,1,1])  #=> d
-    nexts = strategy.possible_next_full_states(s).map(&:to_s)
+    nexts = strategy.possible_next_states(s).map(&:to_s)
     expected = ['cdccdc', 'cdccdd', 'cdcddc', 'cdcddd']
     assert_equal expected, nexts
 
-    next_state = strategy.next_full_state_with_self(s)
+    next_state = strategy.next_state_with_self(s)
     move_b = strategy.action([:d,:c,0,1])
     move_c = strategy.action([:c,:d,1,0])
     assert_equal "c#{move_a}c#{move_b}d#{move_c}", next_state.to_s
@@ -178,11 +178,11 @@ class StrategyTest < Minitest::Test
 
     s = State.new(:c,:c,:d,:c,:c,:d)
     move_a = strategy.action([:c,:c,1,1]) #=> d
-    nexts = strategy.possible_next_full_states(s).map(&:to_s)
+    nexts = strategy.possible_next_states(s).map(&:to_s)
     expected = ['cdccdc', 'cdccdd', 'cdcddc', 'cdcddd']
     assert_equal expected, nexts
 
-    next_state = strategy.next_full_state_with_self(s)
+    next_state = strategy.next_state_with_self(s)
     move_b = strategy.action([:d,:c,0,1])
     move_c = strategy.action([:c,:d,1,0])
     assert_equal "c#{move_a}c#{move_b}d#{move_c}", next_state.to_s

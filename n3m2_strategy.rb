@@ -251,7 +251,7 @@ class Strategy
     @strategy.values.all? {|a| a == :c or a == :d }
   end
 
-  def possible_next_full_states(current_fs)
+  def possible_next_states(current_fs)
     ss = current_fs.to_ss
     act_a = action(ss)
     n1 = current_fs.next_state(act_a,:c,:c)
@@ -261,11 +261,11 @@ class Strategy
     [n1,n2,n3,n4]
   end
 
-  def next_full_state_with_self(current_fs)
-    next_full_state_with(current_fs, self, self)
+  def next_state_with_self(current_fs)
+    next_state_with(current_fs, self, self)
   end
 
-  def next_full_state_with( fs, b_strategy, c_strategy )
+  def next_state_with( fs, b_strategy, c_strategy )
     act_a = action( fs.to_ss )
     fs_b = State.new( fs.b_2, fs.b_1, fs.c_2, fs.c_1, fs.a_2, fs.a_1 )
     fs_c = State.new( fs.c_2, fs.c_1, fs.a_2, fs.a_1, fs.b_2, fs.b_1 )
@@ -278,7 +278,7 @@ class Strategy
     g = DirectedGraph.new(N)
     N.times do |i|
       fs = State.make_from_id(i)
-      next_fss = possible_next_full_states(fs)
+      next_fss = possible_next_states(fs)
       next_fss.each do |next_fs|
         g.add_link(i,next_fs.to_id)
       end
@@ -294,7 +294,7 @@ class Strategy
     g = DirectedGraph.new(N)
     N.times do |i|
       fs = State.make_from_id(i)
-      j = next_full_state_with(fs, b_strategy, c_strategy).to_id
+      j = next_state_with(fs, b_strategy, c_strategy).to_id
       g.add_link( i, j )
     end
     g
@@ -308,7 +308,7 @@ class Strategy
     d = Array.new(N) { Array.new(N, Float::INFINITY) }
     N.times do |i|
       s = State.make_from_id(i)
-      ns = possible_next_full_states(s)
+      ns = possible_next_states(s)
       ns.each do |n|
         j = n.to_id
         d[i][j] = s.relative_payoff_against(coplayer)
