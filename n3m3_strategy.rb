@@ -3,7 +3,7 @@ require_relative 'n3m2_strategy'
 
 module N3M3
 
-class FullState
+class State
 
   NUM_STATES = 512
 
@@ -61,8 +61,8 @@ class FullState
   end
 
   def to_m2_states
-    fs1 = N3M2::FullState.new(@a_3,@a_2,@b_3,@b_2,@c_3,@c_2)
-    fs2 = N3M2::FullState.new(@a_2,@a_1,@b_2,@b_1,@c_2,@c_1)
+    fs1 = N3M2::State.new(@a_3,@a_2,@b_3,@b_2,@c_3,@c_2)
+    fs2 = N3M2::State.new(@a_2,@a_1,@b_2,@b_1,@c_2,@c_1)
     [fs1,fs2]
   end
 
@@ -71,9 +71,9 @@ class FullState
     when :A
       self.clone
     when :B
-      FullState.new(@b_3,@b_2,@b_1,@c_3,@c_2,@c_1,@a_3,@a_2,@a_1)
+      State.new(@b_3,@b_2,@b_1,@c_3,@c_2,@c_1,@a_3,@a_2,@a_1)
     when :C
-      FullState.new(@c_3,@c_2,@c_1,@a_3,@a_2,@a_1,@b_3,@b_2,@b_1)
+      State.new(@c_3,@c_2,@c_1,@a_3,@a_2,@a_1,@b_3,@b_2,@b_1)
     else
       raise "must not happen"
     end
@@ -121,7 +121,7 @@ end
 
 class Strategy
 
-  N = FullState::NUM_STATES
+  N = State::NUM_STATES
 
   def initialize( actions )
     raise "invalid arg" unless actions.all? {|act| act == :c or act == :d }
@@ -138,9 +138,9 @@ class Strategy
   end
 
   def show_actions(io)
-    FullState::NUM_STATES.times do |i|
+    State::NUM_STATES.times do |i|
       act = @actions[i]
-      stat = FullState.make_from_id(i)
+      stat = State.make_from_id(i)
       io.print "#{act}|#{stat}\t"
       io.print "\n" if i % 10 == 9
     end
@@ -167,7 +167,7 @@ EOS
         i = a * 64 + bc
         @actions[i]
       end
-      bits = FullState.make_from_id(bc).to_a # to make header
+      bits = State.make_from_id(bc).to_a # to make header
       header = "$#{bits[3..5].join}#{bits[6..8].join}$"
       if b != c
         header += " / $#{bits[6..8].join}#{bits[3..5].join}$"
@@ -193,7 +193,7 @@ EOS
   def self.make_from_m2_strategy( m2_stra )
     acts = []
     N.times do |i|
-      m3_stat = FullState.make_from_id(i)
+      m3_stat = State.make_from_id(i)
       m2_stat = m3_stat.to_m2_states.last
       act = m2_stra.action( m2_stat.to_ss )
       acts << act
@@ -203,9 +203,9 @@ EOS
 
   def modify_action( state, action )
     if state.is_a?(String)
-      stat = FullState.make_from_bits(state)
+      stat = State.make_from_bits(state)
       @actions[stat.to_id] = action
-    elsif state.is_a?(FullState)
+    elsif state.is_a?(State)
       @actions[state.to_id] = action
     else
       raise "invalid arg"
@@ -236,9 +236,9 @@ EOS
 
   def next_full_state_with(s, b_strategy, c_strategy)
     act_a = action(s.to_id)
-    state_b = FullState.new( s.b_3, s.b_2, s.b_1, s.c_3, s.c_2, s.c_1, s.a_3, s.a_2, s.a_1 )
+    state_b = State.new( s.b_3, s.b_2, s.b_1, s.c_3, s.c_2, s.c_1, s.a_3, s.a_2, s.a_1 )
     act_b = b_strategy.action(state_b.to_id)
-    state_c = FullState.new( s.c_3, s.c_2, s.c_1, s.a_3, s.a_2, s.a_1, s.b_3, s.b_2, s.b_1 )
+    state_c = State.new( s.c_3, s.c_2, s.c_1, s.a_3, s.a_2, s.a_1, s.b_3, s.b_2, s.b_1 )
     act_c = c_strategy.action(state_c.to_id)
     s.next_state(act_a, act_b, act_c)
   end
@@ -246,7 +246,7 @@ EOS
   def transition_graph
     g = DirectedGraph.new(N)
     N.times do |i|
-      s = FullState.make_from_id(i)
+      s = State.make_from_id(i)
       next_ss = possible_next_full_states(s)
       next_ss.each do |ns|
         g.add_link(i, ns.to_id)
@@ -262,7 +262,7 @@ EOS
   def transition_graph_with(b_strategy, c_strategy)
     g = DirectedGraph.new(N)
     N.times do |i|
-      current = FullState.make_from_id(i)
+      current = State.make_from_id(i)
       j = next_full_state_with(current, b_strategy, c_strategy).to_id
       g.add_link( i, j )
     end
@@ -282,8 +282,8 @@ EOS
     checked = Array.new(N, false)
     N.times do |i|
       next if checked[i]
-      s = FullState.make_from_id(i)
-      swapped = FullState.new(s.a_3,s.a_2,s.a_1, s.c_3,s.c_2,s.c_1, s.b_3,s.b_2,s.b_1)
+      s = State.make_from_id(i)
+      swapped = State.new(s.a_3,s.a_2,s.a_1, s.c_3,s.c_2,s.c_1, s.b_3,s.b_2,s.b_1)
       return false unless action(s.to_id) == action(swapped.to_id)
       checked[s.to_id] = true
       checked[swapped.to_id] = true
@@ -294,7 +294,7 @@ EOS
   def defensible_against(coplayer=:B)
     d = Array.new(N) { Array.new(N, Float::INFINITY) }
     N.times do |i|
-      s = FullState.make_from_id(i)
+      s = State.make_from_id(i)
       ns = possible_next_full_states(s)
       ns.each do |n|
         j = n.to_id
@@ -396,7 +396,7 @@ EOS
     g = transition_graph_with_self
     traced = []
     g.dfs(s.to_id) do |x|
-      traced.push(FullState.make_from_id(x))
+      traced.push(State.make_from_id(x))
     end
     traced
   end

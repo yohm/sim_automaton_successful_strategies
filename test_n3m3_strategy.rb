@@ -7,7 +7,7 @@ include N3M3
 class StateM3Test < Minitest::Test
 
   def test_alld
-    fs = FullState.make_from_id(511)
+    fs = State.make_from_id(511)
     assert_equal [:d,:d,:d,:d,:d,:d,:d,:d,:d], fs.to_a
     assert_equal 'ddd-ddd-ddd', fs.to_s
     assert_equal 511, fs.to_id
@@ -16,7 +16,7 @@ class StateM3Test < Minitest::Test
   end
 
   def test_allc
-    fs = FullState.make_from_id(0)
+    fs = State.make_from_id(0)
     assert_equal [:c,:c,:c,:c,:c,:c,:c,:c,:c], fs.to_a
     assert_equal 'ccc-ccc-ccc', fs.to_s
     assert_equal 0, fs.to_id
@@ -25,7 +25,7 @@ class StateM3Test < Minitest::Test
   end
 
   def test_state273
-    fs = FullState.make_from_id(273)
+    fs = State.make_from_id(273)
     assert_equal [:d, :c, :c, :c, :d, :c, :c, :c, :d], fs.to_a
     assert_equal 'dcc-cdc-ccd', fs.to_s
     assert_equal 273, fs.to_id
@@ -35,13 +35,13 @@ class StateM3Test < Minitest::Test
   end
 
   def test_equality
-    fs1 = FullState.make_from_id(273)
-    fs2 = FullState.new(:d,:c,:c,:c,:d,:c,:c,:c,:d)
+    fs1 = State.make_from_id(273)
+    fs2 = State.new(:d,:c,:c,:c,:d,:c,:c,:c,:d)
     assert_equal true, fs1==fs2
   end
 
   def test_neighbor_states
-    fs = FullState.make_from_id(511)
+    fs = State.make_from_id(511)
     neighbors = fs.neighbor_states.map(&:to_s).sort
     assert_equal ['ddc-ddd-ddd','ddd-ddc-ddd','ddd-ddd-ddc'], neighbors
   end
@@ -78,7 +78,7 @@ class StrategyTest < Minitest::Test
     assert_equal :d, stra.action(511)
     assert_equal true, stra.valid?
 
-    s = FullState.new(:d,:c,:c,:c,:c,:d,:d,:d,:c)
+    s = State.new(:d,:c,:c,:c,:c,:d,:d,:d,:c)
     nexts = stra.possible_next_full_states(s).map(&:to_s)
     expected = ['ccd-cdc-dcc', 'ccd-cdc-dcd', 'ccd-cdd-dcc', 'ccd-cdd-dcd']
     assert_equal expected, nexts
@@ -99,7 +99,7 @@ class StrategyTest < Minitest::Test
     assert_equal :c, stra.action(511)
     assert_equal true, stra.valid?
 
-    s = FullState.new(:d,:c,:c,:c,:c,:d,:d,:d,:c)
+    s = State.new(:d,:c,:c,:c,:c,:d,:d,:d,:c)
     nexts = stra.possible_next_full_states(s).map(&:to_s)
     expected = ['ccc-cdc-dcc', 'ccc-cdc-dcd', 'ccc-cdd-dcc', 'ccc-cdd-dcd']
     assert_equal expected, nexts
@@ -145,7 +145,7 @@ class StrategyTest < Minitest::Test
 
   def test_trace_states
     # transition to fully cooperative state from defective state by two-bit error
-    s = FullState.make_from_bits("ddcddcddd")
+    s = State.make_from_bits("ddcddcddd")
 
     stra = Strategy.make_from_bits(PS2_bits)
     trace = stra.trace_state_until_cycle(s)

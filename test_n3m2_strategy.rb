@@ -7,7 +7,7 @@ class StateTest < Minitest::Test
   include N3M2
 
   def test_alld
-    fs = FullState.make_from_id(63)
+    fs = State.make_from_id(63)
     assert_equal [:d,:d,:d,:d,:d,:d], fs.to_a
     assert_equal [:d,:d,2,2], fs.to_ss
     assert_equal 0, fs.relative_payoff_against(:B)
@@ -15,7 +15,7 @@ class StateTest < Minitest::Test
   end
 
   def test_allc
-    fs = FullState.make_from_id(0)
+    fs = State.make_from_id(0)
     assert_equal [:c,:c,:c,:c,:c,:c], fs.to_a
     assert_equal [:c,:c,0,0], fs.to_ss
     assert_equal 0, fs.relative_payoff_against(:B)
@@ -23,7 +23,7 @@ class StateTest < Minitest::Test
   end
 
   def test_state43
-    fs = FullState.make_from_id(43)
+    fs = State.make_from_id(43)
     assert_equal [:d, :c, :d, :c, :d, :d], fs.to_a
     assert_equal [:d,:c,2,1], fs.to_ss
     assert_equal 0, fs.relative_payoff_against(:B)
@@ -32,7 +32,7 @@ class StateTest < Minitest::Test
   end
 
   def test_state44
-    fs = FullState.make_from_id(44)
+    fs = State.make_from_id(44)
     assert_equal [:d, :c, :d, :d, :c, :c], fs.to_a
     assert_equal [:d,:c,1,-1], fs.to_ss
     assert_equal -1, fs.relative_payoff_against(:B)
@@ -41,8 +41,8 @@ class StateTest < Minitest::Test
   end
 
   def test_equality
-    fs1 = FullState.make_from_id(15)
-    fs2 = FullState.new(:c,:c,:d,:d,:d,:d)
+    fs1 = State.make_from_id(15)
+    fs2 = State.new(:c,:c,:d,:d,:d,:d)
     assert_equal true, fs1 == fs2
 
   end
@@ -59,7 +59,7 @@ class StrategyTest < Minitest::Test
     assert_equal :d, strategy.action([:c,:c,0,0] )
     assert_equal :d, strategy.action([:d,:d,2,2] )
 
-    s = FullState.new(:c,:c,:d,:c,:c,:d)
+    s = State.new(:c,:c,:d,:c,:c,:d)
     nexts = strategy.possible_next_full_states(s).map(&:to_s)
     expected = ['cdccdc', 'cdccdd', 'cdcddc', 'cdcddd']
     assert_equal expected, nexts
@@ -79,7 +79,7 @@ class StrategyTest < Minitest::Test
     assert_equal :c, strategy.action([:c,:c,0,0] )
     assert_equal :c, strategy.action([:d,:d,2,2] )
 
-    s = FullState.new(:c,:c,:d,:c,:c,:d)
+    s = State.new(:c,:c,:d,:c,:c,:d)
     nexts = strategy.possible_next_full_states(s).map(&:to_s)
     expected = ['ccccdc', 'ccccdd', 'cccddc', 'cccddd']
     assert_equal expected, nexts
@@ -99,8 +99,7 @@ class StrategyTest < Minitest::Test
     assert_equal :c, strategy.action([:c,:c,0,0] )
     assert_equal :d, strategy.action([:d,:d,2,2] )
 
-    s = FullState.new(:c,:c,:d,:c,:c,:d)
-    sid = State.index(s.to_ss)
+    s = State.new(:c,:c,:d,:c,:c,:d)
     move_a = strategy.action([:c,:c,1,1])  #=> d
     nexts = strategy.possible_next_full_states(s).map(&:to_s)
     expected = ['cdccdc', 'cdccdd', 'cdcddc', 'cdcddd']
@@ -119,11 +118,11 @@ class StrategyTest < Minitest::Test
   def test_AON2
     bits = Array.new(40)
     Strategy::N.times do |i|
-      s = FullState.make_from_id(i)
+      s = State.make_from_id(i)
       if s.a_2 == s.b_2 and s.a_2 == s.c_2 and s.a_1 == s.b_1 and s.a_1 == s.c_1
-        bits[State.index(s.to_ss)] = 'c'
+        bits[ShortState.index(s.to_ss)] = 'c'
       else
-        bits[State.index(s.to_ss)] = 'd'
+        bits[ShortState.index(s.to_ss)] = 'd'
       end
     end
     strategy = Strategy.make_from_bits(bits.join)
@@ -145,7 +144,7 @@ class StrategyTest < Minitest::Test
     assert_equal :c, strategy.action([:c,:c,0,0] )
     assert_equal :d, strategy.action([:d,:d,2,2] )
 
-    s = FullState.new(:c,:c,:d,:c,:c,:d)
+    s = State.new(:c,:c,:d,:c,:c,:d)
     move_a = strategy.action([:c,:c,1,1]) #=> d
     nexts = strategy.possible_next_full_states(s).map(&:to_s)
     expected = ['cdccdc', 'cdccdd', 'cdcddc', 'cdcddd']

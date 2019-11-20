@@ -3,7 +3,7 @@ require_relative 'graph'
 
 module N3M2
 
-module State
+module ShortState
 
   A_STATES = [
       [:c,:c],
@@ -36,7 +36,7 @@ module State
   end
 end
 
-class FullState
+class State
 
   def self.make_from_id( id )
     raise "invalid arg: #{id}" if id < 0 or id > 63
@@ -96,9 +96,9 @@ class FullState
     when :A
       self.clone
     when :B
-      FullState.new(@b_2,@b_1,@c_2,@c_1,@a_2,@a_1)
+      State.new(@b_2,@b_1,@c_2,@c_1,@a_2,@a_1)
     when :C
-      FullState.new(@c_2,@c_1,@a_2,@a_1,@b_2,@b_1)
+      State.new(@c_2,@c_1,@a_2,@a_1,@b_2,@b_1)
     else
       raise "must not happen"
     end
@@ -164,24 +164,24 @@ class Strategy
   N = 64
 
   def initialize( actions )
-    @strategy = Hash[ State::ALL_STATES.zip( actions ) ]
+    @strategy = Hash[ ShortState::ALL_STATES.zip( actions ) ]
   end
 
   def to_bits
-    State::ALL_STATES.map do |stat|
+    ShortState::ALL_STATES.map do |stat|
       @strategy[stat] == :c ? 'c' : 'd'
     end.join
   end
 
   def to_64a
     N.times.map do |i|
-      fs = FullState.make_from_id(i)
+      fs = State.make_from_id(i)
       act = @strategy[fs.to_ss]
     end
   end
 
   def show_actions(io)
-    State::ALL_STATES.each_with_index do |stat,idx|
+    ShortState::ALL_STATES.each_with_index do |stat,idx|
       io.print "#{@strategy[stat]}|#{stat.join}\t"
       io.print "\n" if idx % 10 == 9
     end
@@ -189,7 +189,7 @@ class Strategy
 
   def show_actions_using_full_state(io)
     N.times do |i|
-      fs = FullState.make_from_id(i)
+      fs = State.make_from_id(i)
       act = @strategy[fs.to_ss]
       io.print "#{act}@#{fs}\t"
       io.print "\n" if i % 8 == 7
@@ -198,11 +198,11 @@ class Strategy
 
   def show_actions_latex(io)
     num_col = 4
-    num_row = State::ALL_STATES.size / num_col
+    num_row = ShortState::ALL_STATES.size / num_col
     num_row.times do |row|
       num_col.times do |col|
         idx = row + col * num_row
-        stat = State::ALL_STATES[idx]
+        stat = ShortState::ALL_STATES[idx]
         s = stat.map do |c|
           if c == -1
             '\bar{1}'
@@ -230,9 +230,9 @@ class Strategy
   def action( state )
     s = case state
     when Integer
-      fs = FullState.make_from_id(state)
+      fs = State.make_from_id(state)
       fs.to_ss
-    when FullState
+    when State
       fs.to_ss
     else
       state
@@ -260,8 +260,8 @@ class Strategy
 
   def next_full_state_with( fs, b_strategy, c_strategy )
     act_a = action( fs.to_ss )
-    fs_b = FullState.new( fs.b_2, fs.b_1, fs.c_2, fs.c_1, fs.a_2, fs.a_1 )
-    fs_c = FullState.new( fs.c_2, fs.c_1, fs.a_2, fs.a_1, fs.b_2, fs.b_1 )
+    fs_b = State.new( fs.b_2, fs.b_1, fs.c_2, fs.c_1, fs.a_2, fs.a_1 )
+    fs_c = State.new( fs.c_2, fs.c_1, fs.a_2, fs.a_1, fs.b_2, fs.b_1 )
     act_b = b_strategy.action( fs_b.to_ss )
     act_c = c_strategy.action( fs_c.to_ss )
     fs.next_state( act_a, act_b, act_c )
@@ -270,7 +270,7 @@ class Strategy
   def transition_graph
     g = DirectedGraph.new(N)
     N.times do |i|
-      fs = FullState.make_from_id(i)
+      fs = State.make_from_id(i)
       next_fss = possible_next_full_states(fs)
       next_fss.each do |next_fs|
         g.add_link(i,next_fs.to_id)
@@ -286,7 +286,7 @@ class Strategy
   def transition_graph_with(b_strategy, c_strategy)
     g = DirectedGraph.new(N)
     N.times do |i|
-      fs = FullState.make_from_id(i)
+      fs = State.make_from_id(i)
       j = next_full_state_with(fs, b_strategy, c_strategy).to_id
       g.add_link( i, j )
     end
@@ -300,7 +300,7 @@ class Strategy
   def defensible_against(coplayer=:B)
     d = Array.new(N) { Array.new(N, Float::INFINITY) }
     N.times do |i|
-      s = FullState.make_from_id(i)
+      s = State.make_from_id(i)
       ns = possible_next_full_states(s)
       ns.each do |n|
         j = n.to_id
