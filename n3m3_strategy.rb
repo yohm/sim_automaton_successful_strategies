@@ -393,37 +393,16 @@ EOS
   end
 
   def trace_state_until_cycle(s)
-    trace = [s]
-    loop do
-      n = next_full_state_with_self(trace.last)
-      if trace.include?(n)
-        trace << n
-        break
-      else
-        trace << n
-      end
+    g = transition_graph_with_self
+    traced = []
+    g.dfs(s.to_id) do |x|
+      traced.push(FullState.make_from_id(x))
     end
-    trace
+    traced
   end
 
-  def recovery_path_nodes(num_errors)
-    if num_errors == 0
-      raise "full cooperation is not a terminal state" if action(0) == :d
-      return [FullState.make_from_id(0)]
-    else
-      states = recovery_path_nodes(num_errors-1)
-      return false unless states
-      neighbors = states.map {|s| s.neighbor_states }.flatten.uniq {|s| s.to_id}
-      traces = neighbors.map do |n|
-        trace = trace_state_until_cycle(n)
-        return false if trace.last.to_id != 0   # => failed to recover full cooperation
-        trace
-      end
-      (neighbors + traces.flatten).uniq {|s| s.to_id} # nodes which is necessary to recover from errors
-    end
-  end
-
-  def make_successful
+  # overwrite actions to make PS2 fully successful
+  def make_PS2_FUSS
     # noise on B&C (state 0->5)
     modify_action('ccdccdccc',:c) # (5->26)
     modify_action('ccdcccccd',:c) # (5->26)
