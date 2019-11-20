@@ -15,6 +15,8 @@ jobs:
         ruby-version: 2.6.x
     - name: Build and test
       run: |
-        ruby graph.rb
-        ruby n3m2_strategy.rb
-        ruby n3m3_strategy.rb
+        ruby test_graph.rb
+        ruby test_union_find.rb
+        ruby test_n2m2_strategy.rb
+        ruby test_n3m2_strategy.rb
+        ruby test_n3m3_strategy.rb
