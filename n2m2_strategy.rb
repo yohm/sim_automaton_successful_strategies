@@ -34,7 +34,7 @@ class State
     self.new(*a)
   end
 
-  def self.make_from_str(s)
+  def self.make_from_bits(s)
     raise unless s =~ /\A[cd]{4}\z/
     self.new( *s.each_char.map(&:to_sym) )
   end
@@ -159,27 +159,27 @@ class Strategy
     end
   end
 
-  def self.make_from_str( bits )
+  def self.make_from_bits( bits )
     raise "invalid format" unless bits =~ /\A[cd]{16}\z/
     actions = bits.each_char.map(&:to_sym)
     self.new( actions )
   end
 
   def action( state )
-    s =
+    i =
       case state
       when Integer
         state
       when State
-        state
+        state.to_id
       when Array
-        State.new(*state)
+        State.new(*state).to_id
       when String
-        State.make_from_str(state)
+        State.make_from_bits(state).to_id
       else
         raise "invalid input"
       end
-    @strategy[s.to_i]
+    @strategy[i]
   end
 
   def valid?
@@ -195,7 +195,7 @@ class Strategy
       when Array
         State.new(*state)
       when String
-        State.make_from_str(state)
+        State.make_from_bits(state)
       else
         raise "invalid input"
       end
@@ -292,7 +292,7 @@ class Strategy
   end
 
   def distinguishable?
-    allc = Strategy.make_from_str('c'*N)
+    allc = Strategy.make_from_bits('c'*N)
     g = transition_graph_with(allc)
 
     judged = Array.new(N, false)
@@ -393,7 +393,7 @@ end
 
 if __FILE__ == $0
   ARGV.each do |arg|
-    pp N2M2::Strategy.make_from_str(arg)
+    pp N2M2::Strategy.make_from_bits(arg)
   end
 end
 

@@ -55,6 +55,7 @@ class State
     end
     nums.inject(:+)
   end
+  alias :to_i :to_id
 
   def ==(other)
     self.to_id == other.to_id
@@ -212,8 +213,21 @@ EOS
     end
   end
 
-  def action( state_id )
-    @actions[state_id]
+  def action( state )
+    i =
+      case state
+      when Integer
+        state
+      when State
+        state.to_id
+      when Array
+        State.new(*state).to_id
+      when String
+        State.make_from_bits(state).to_id
+      else
+        raise "invalid input"
+      end
+    @actions[i]
   end
 
   def valid?

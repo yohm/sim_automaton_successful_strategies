@@ -90,6 +90,7 @@ class State
     id += 1  if @c_1 == :d
     id
   end
+  alias :to_i :to_id
 
   def state_from( player )
     case player
@@ -232,10 +233,15 @@ class Strategy
     when Integer
       fs = State.make_from_id(state)
       fs.to_ss
+    when Array    # such as [:c,:c,0,2]
+      raise "invalid input" unless state.size == 4
+      state
     when State
       fs.to_ss
+    when String
+      ShortState.make_from_bits(state).to_ss
     else
-      state
+      raise "invalid input"
     end
     @strategy[s]
   end

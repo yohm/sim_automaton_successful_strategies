@@ -2,40 +2,11 @@ require_relative 'n2m2_strategy'
 require_relative 'n3m2_strategy'
 require_relative 'n3m3_strategy'
 require_relative 'graph'
+require_relative 'union_find'
 
 if ARGV.size == 0
   $stderr.puts "usage: ruby #{__FILE__} cccdcccdcccdcccd"
   raise "invalid number of arguments"
-end
-
-class UnionFind
-  def initialize(n)
-    @par  = Array.new(n) {|i| i}
-  end
-
-  def root(i)
-    if @par[i] != i
-      r = root(@par[i])
-      @par[i] = r
-    end
-    @par[i]
-  end
-
-  def roots
-    to_h.keys.sort
-  end
-
-  def merge(i, j)
-    ri = root(i)
-    rj = root(j)
-    return false if ri == rj  # already merged
-    ri,rj = rj,ri if ri > rj
-    @par[rj] = ri
-  end
-
-  def to_h
-    @par.size.times.group_by {|i| root(i) }
-  end
 end
 
 def equivalent(dest_i, dest_j, h2a, uf)
