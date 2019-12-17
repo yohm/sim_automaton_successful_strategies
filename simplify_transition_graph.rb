@@ -34,6 +34,7 @@ uf, min_g = str.minimize_DFA
 org_g = str.transition_graph
 
 $stderr.puts uf.to_h.inspect if DEBUG
+$stderr.puts "size: #{uf.to_h.size}" if DEBUG
 node_attr = {}
 uf.roots.each do |n|
   node_attr[n] = {label: "#{str.action(n)}@#{n}"}
