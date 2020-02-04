@@ -29,7 +29,7 @@ else
   raise "invalid argument"
 end
 
-noisy = true
+noisy = false
 uf, min_g = str.minimize_DFA(noisy)
 
 $stderr.puts uf.to_h.inspect if DEBUG
