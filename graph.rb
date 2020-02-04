@@ -48,8 +48,8 @@ class DirectedGraph
     @n.times do |ni|
       next if remove_isolated and @links[ni].empty?
       @links[ni].each do |nj|
-        label = edge_attributes[ [ni,nj] ][:label] || ""
-        style = edge_attributes[ [ni,nj] ][:style] || "solid"
+        label = edge_attributes.dig( [ni,nj], :label) || ""
+        style = edge_attributes.dig( [ni,nj], :style) || "solid"
         io.puts "  #{ni} -> #{nj} [label=\"#{label}\"; style = #{style}];"
       end
     end
