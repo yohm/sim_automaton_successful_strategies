@@ -238,6 +238,18 @@ class Strategy
     g
   end
 
+  def noisy_transition_graph
+    g = DirectedGraph.new(N)
+    N.times do |i|
+      s = State.make_from_id(i)
+      [[:c,:c], [:c,:d], [:d,:c], [:d,:d]].each do |a|
+        ns = s.next_state(*a)
+        g.add_link(i, ns.to_i)
+      end
+    end
+    g
+  end
+
   def transition_graph_with_self
     transition_graph_with(self)
   end
@@ -352,7 +364,7 @@ class Strategy
     gn
   end
 
-  def minimize_DFA
+  def minimize_DFA(noisy=false)
     uf_0 = UnionFind.new(N)
     # initial grouping by the action c/d
     c_rep = N.times.find {|i| action(i) == :c}
@@ -365,9 +377,9 @@ class Strategy
     loop do
       uf_0_h = uf_0.to_h
       uf = UnionFind.new(N)
-      uf_0_h.each do |r,s|  # refinint a set in uf_0
+      uf_0_h.each do |r,s|  # refining a set in uf_0
         s.combination(2).each do |i,j|
-          if _equivalent(i, j, uf_0)
+          if _equivalent(i, j, uf_0, noisy)
             uf.merge(i,j)
           end
         end
@@ -377,7 +389,8 @@ class Strategy
     end
 
     g = DirectedGraph.new(N)
-    transition_graph.for_each_link do |i,j|
+    org_g = noisy ? noisy_transition_graph : transition_graph
+    org_g.for_each_link do |i,j|
       ri = uf_0.root(i)
       rj = uf_0.root(j)
       g.add_link(ri,rj)
@@ -387,16 +400,23 @@ class Strategy
     return uf_0, g
   end
 
-  def _equivalent(i, j, uf)
+  def _equivalent(i, j, uf, noisy)
     # both action & next state must be identical
     raise unless action(i) == action(j)
     act_a = action(i)
+    err_a = act_a == :c ? :d : :c
     acts_other = [:c,:d]
-    acts_other.all? do |act_b|
+    acts_other.each do |act_b|
       ni = State.make_from_id(i).next_state(act_a, act_b).to_id
       nj = State.make_from_id(j).next_state(act_a, act_b).to_id
-      uf.root(ni) == uf.root(nj)
+      return false unless uf.root(ni) == uf.root(nj)
+      if noisy
+        ni2 = State.make_from_id(i).next_state(err_a, act_b).to_id
+        nj2 = State.make_from_id(j).next_state(err_a, act_b).to_id
+        return false unless uf.root(ni2) == uf.root(nj2)
+      end
     end
+    return true
   end
 end
 

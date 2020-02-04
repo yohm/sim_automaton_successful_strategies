@@ -36,7 +36,7 @@ class DirectedGraph
     @links.values.each {|ns| ns.uniq! }
   end
 
-  def to_dot(node_attributes: {}, remove_isolated: false, node_ranks: [], edge_labels: {})
+  def to_dot(node_attributes: {}, remove_isolated: false, node_ranks: [], edge_attributes: {})
     io = StringIO.new
     io.puts "digraph \"\" {"
     @n.times do |ni|
@@ -48,7 +48,9 @@ class DirectedGraph
     @n.times do |ni|
       next if remove_isolated and @links[ni].empty?
       @links[ni].each do |nj|
-        io.puts "  #{ni} -> #{nj} [label=\"#{edge_labels[[ni,nj]]}\"];"
+        label = edge_attributes[ [ni,nj] ][:label] || ""
+        style = edge_attributes[ [ni,nj] ][:style] || "solid"
+        io.puts "  #{ni} -> #{nj} [label=\"#{label}\"; style = #{style}];"
       end
     end
     if node_ranks.size > 0

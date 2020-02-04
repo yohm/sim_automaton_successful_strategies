@@ -29,9 +29,8 @@ else
   raise "invalid argument"
 end
 
-uf, min_g = str.minimize_DFA
-
-org_g = str.transition_graph
+noisy = true
+uf, min_g = str.minimize_DFA(noisy)
 
 $stderr.puts uf.to_h.inspect if DEBUG
 $stderr.puts "size: #{uf.to_h.size}" if DEBUG
@@ -40,11 +39,21 @@ uf.roots.each do |n|
   node_attr[n] = {label: "#{str.action(n)}@#{n}"}
 end
 link_label = Hash.new {|h,k| h[k] = [] }
+link_style = Hash.new
+org_g = noisy ? str.noisy_transition_graph : str.transition_graph
 org_g.for_each_link do |i,j|
   e = [uf.root(i), uf.root(j)]
-  link_label[e].push( to_last_actions.call(j) )
+  acts = to_last_actions.call(j)
+  link_label[e].push( acts )
+  if str.action(i).to_s == acts[0]
+    link_style[e] = "solid"
+  else
+    link_style[e] ||= "dashed"
+  end
 end
-link_label = link_label.map {|k,v| [k, v.sort.uniq.join(',')] }.to_h
 
-$stdout.puts min_g.to_dot(remove_isolated: true, node_attributes: node_attr, edge_labels: link_label)
+link_attrs = link_label.map {|k,v| [k, {label: v.sort.uniq.join(',')}] }.to_h
+link_style.each {|k,v| link_attrs[k][:style] = v }
+
+$stdout.puts min_g.to_dot(remove_isolated: true, node_attributes: node_attr, edge_attributes: link_attrs)
 
